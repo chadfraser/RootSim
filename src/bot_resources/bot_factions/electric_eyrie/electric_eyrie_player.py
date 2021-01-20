@@ -13,7 +13,7 @@ from pieces.building import Building
 from pieces.token import Token
 from pieces.warrior import Warrior
 from player_resources.player import Player
-from sort_utils import sort_clearings_by_any_own_buildings, sort_clearings_by_defenseless_buildings, \
+from sort_utils import sort_clearings_by_any_own_buildings, sort_clearings_by_defenseless_enemy_buildings, \
     sort_clearings_by_enemy_pieces, sort_clearings_by_priority, sort_clearings_by_own_warriors, \
     sort_players_by_buildings_in_clearing, sort_players_by_pieces_in_clearing, sort_players_by_setup_order
 
@@ -227,7 +227,7 @@ class ElectricEyriePlayer(Bot):
                             clearing.is_player_warriors_in_location(self) and
                             clearing.is_any_other_player_in_location(self)]
         sorted_suited_clearings = sort_clearings_by_priority(suited_clearings)
-        sorted_suited_clearings = sort_clearings_by_defenseless_buildings(sorted_suited_clearings, self)
+        sorted_suited_clearings = sort_clearings_by_defenseless_enemy_buildings(sorted_suited_clearings, self)
         sorted_suited_clearings = sort_clearings_by_any_own_buildings(sorted_suited_clearings, self, descending=False)
         # TODO: Mercenaries prevent fighting otters
         if not sorted_suited_clearings:

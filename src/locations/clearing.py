@@ -38,6 +38,19 @@ class Clearing(Location):
         self.is_corner_clearing = is_corner_clearing
         self.opposite_corner_clearing = None
 
+    # TODO: Remove after testing
+    def __repr__(self):
+        return str(self.priority) + str(self.suit.value)
+
+    def __lt__(self, other):
+        return self.priority < other.priority
+
+    def __eq__(self, other):
+        return self.priority == other.priority
+
+    def __hash__(self):
+        return hash(self.priority)
+
     ###########################################
     #                                         #
     # Initial connections + adjacency + setup #

@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from constants import FACTION_SETUP_ORDER, Suit
 from locations.clearing import Clearing
-from locations.forest import Forest
-from locations.location import Location
 from player_resources.player import Player
 
 
@@ -16,11 +14,11 @@ from player_resources.player import Player
 # By default, all player sorting methods go from 'most X' to 'least X'. Pass descending=False to reverse that
 # Setup Order instead goes in the traditional order: A, B, C, D, ...
 def sort_players_by_setup_order(players: list[Player], descending: bool = False) -> list[Player]:
-    return sorted(players, key=lambda p: FACTION_SETUP_ORDER.index(p), reverse=descending)
+    return sorted(players, key=lambda p: FACTION_SETUP_ORDER.index(p.faction), reverse=descending)
 
 
 def sort_players_by_victory_points(players: list[Player], descending: bool = True) -> list[Player]:
-    return sorted(players, key=lambda p: p.get_victory_points(), reverse=descending)
+    return sorted(players, key=lambda p: p.victory_points, reverse=descending)
 
 
 def sort_players_by_pieces_in_clearing(players: list[Player], clearing: Clearing,
@@ -135,24 +133,16 @@ def sort_clearings_by_any_free_building_slots(clearings: list[Clearing], descend
 
 def sort_clearings_by_ruled_by_self(clearings: list[Clearing], acting_player: Player,
                                     descending: bool = True) -> list[Clearing]:
-    return sorted(clearings, key=lambda c: not acting_player.does_rule_clearing(c), reverse=descending)
+    return sorted(clearings, key=lambda c: acting_player.does_rule_clearing(c), reverse=descending)
 
 
-# TODO?
-# You probably always want to call this with descending=False...
-def sort_clearings_by_distance(clearings: list[Clearing], starting_location: Location,
-                               descending: bool = True) -> list[Clearing]:
-    if not isinstance(starting_location, Clearing) and not isinstance(starting_location, Forest):
-        return []
-    pass
+def sort_clearings_by_defenseless_enemy_buildings(clearings: list[Clearing], acting_player: Player,
+                                                  descending: bool = True) -> list[Clearing]:
+    return sorted(clearings, key=lambda c: get_defenseless_enemy_buildings_in_clearing(c, acting_player),
+                  reverse=descending)
 
 
-def sort_clearings_by_defenseless_buildings(clearings: list[Clearing], acting_player: Player,
-                                            descending: bool = True) -> list[Clearing]:
-    return sorted(clearings, key=lambda c: get_defenseless_buildings_in_clearing(c, acting_player), reverse=descending)
-
-
-def get_defenseless_buildings_in_clearing(clearing: Clearing, acting_player: Player) -> int:
+def get_defenseless_enemy_buildings_in_clearing(clearing: Clearing, acting_player: Player) -> int:
     defenseless_buildings = 0
     for player in clearing.get_all_other_players_in_location(acting_player):
         if player.is_defenseless(clearing):
@@ -172,9 +162,9 @@ def sort_paths_by_distance(paths: list[list[Clearing]], descending: bool = False
     return sorted(paths, key=lambda p: len(p), reverse=descending)
 
 
-# TODO: Implement lexicographic priority sorting
+# TODO: Implement lexicographic priority sorting better than eq, lt, hash?
 def sort_paths_by_lexicographic_priority(paths: list[list[Clearing]], descending: bool = False) -> list[list[Clearing]]:
-    return sorted(paths, key=lambda p: len(p), reverse=descending)
+    return sorted(paths, reverse=descending)
 
 
 def sort_paths_by_destination_priority(paths: list[list[Clearing]], descending: bool = False) -> list[list[Clearing]]:
