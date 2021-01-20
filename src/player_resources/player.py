@@ -5,7 +5,6 @@ from typing import Optional, TYPE_CHECKING, Union
 
 from battle_utils import DamageResult, RollResult
 from locations.clearing import Clearing
-from locations.forest import Forest
 from pieces.building import Building
 from pieces.warrior import Warrior
 from player_resources.piece_stock import PieceStock
@@ -15,6 +14,7 @@ if TYPE_CHECKING:
     from constants import Faction, Suit
     from deck.cards.card import Card
     from game import Game
+    from locations.forest import Forest
     from locations.location import Location
     from pieces.item_token import ItemToken
     from pieces.piece import Piece
@@ -53,6 +53,10 @@ class Player(ABC):
         self.birdsong()
         self.daylight()
         self.evening()
+
+    # TODO: Remove
+    def __repr__(self):
+        return str(self.faction.value)
 
     @abstractmethod
     def birdsong(self) -> None:

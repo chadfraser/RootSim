@@ -1,10 +1,10 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from constants import Suit
 from deck.cards.card import Card
 
 if TYPE_CHECKING:
-    from constants import Suit
     from player_resources.player import Player
 
 

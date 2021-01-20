@@ -24,7 +24,7 @@ class Game:
     board_map: BoardMap
     item_supply: list[ItemToken]
     turn_order: list[Player]
-    turn_player: Player
+    turn_player: Optional[Player]
 
     def __init__(self, players: list[Player] = None) -> None:
         if players is None:
@@ -36,7 +36,10 @@ class Game:
         self.item_supply = []
         # TODO: Turn order, turn player
         self.turn_order = []
-        self.turn_player = players[0]
+        if players:
+            self.turn_player = players[0]
+        else:
+            self.turn_player = None
 
         self.initialize_item_supply()
 
