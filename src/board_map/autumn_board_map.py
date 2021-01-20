@@ -1,13 +1,16 @@
 from __future__ import annotations
 import random
+from typing import Optional, TYPE_CHECKING
 
 from board_map.board_map import BoardMap
 from constants import RUIN_ITEMS, Suit
-from game import Game
 from locations.clearing import Clearing
 from locations.forest import Forest
 from pieces.item_token import ItemToken
 from pieces.ruin import Ruin
+
+if TYPE_CHECKING:
+    from game import Game
 
 
 AUTUMN_MAP_BUILDING_SLOTS_FOR_PRIORITY_CLEARING = [1, 2, 1, 1, 2, 2, 2, 2, 2, 2, 3, 2]
