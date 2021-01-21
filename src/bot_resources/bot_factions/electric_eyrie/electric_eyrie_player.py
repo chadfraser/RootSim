@@ -156,16 +156,15 @@ class ElectricEyriePlayer(Bot):
             warriors_to_move = self.get_warriors_to_move(origin_clearing, suit)
 
             destination_clearings = self.get_movement_destinations(origin_clearing)
-            for destination in destination_clearings:
-                if origin_clearing.can_move_pieces(self, warriors_to_move, destination, requires_rule=True):
-                    self.move(warriors_to_move, origin_clearing, destination)
-                    return
-        # If we couldn't move anywhere, check if it was due to a snare, and remove that snare if so
-        for origin_clearing in sorted_suited_clearings:
-            warriors_to_move = self.get_warriors_to_move(origin_clearing, suit)
-
-            destination_clearings = self.get_movement_destinations(origin_clearing)
-            if self.remove_snare_if_it_prevents_movement(warriors_to_move, origin_clearing, destination_clearings):
+            # If there's a snare in the origin clearing and we have a legal move, remove the snare and cancel the
+            # movement
+            if self.remove_snare_if_it_prevents_movement(warriors_to_move, origin_clearing,
+                                                         destination_clearings):
+                return
+            destination_clearing = self.get_movement_destination(warriors_to_move, origin_clearing,
+                                                                 destination_clearings)
+            if destination_clearing:
+                self.move(warriors_to_move, origin_clearing, destination_clearing)
                 return
 
     def get_warriors_to_move(self, origin_clearing: Clearing, suit: Suit) -> list[Warrior]:
@@ -187,23 +186,6 @@ class ElectricEyriePlayer(Bot):
         sorted_destination_clearings = sort_clearings_by_any_own_buildings(sorted_destination_clearings, self,
                                                                            descending=False)
         return sorted_destination_clearings
-
-    # def get_movement_destination(self, origin_clearing: Clearing, moving_warriors: list[Warrior],
-    #                              ignore_origin_movement_restrictions: bool = False) -> Optional[Clearing]:
-    #     potential_destination_clearings = [clearing for clearing in self.get_adjacent_clearings(origin_clearing)]
-    #     # If ignore_origin_movement_restrictions is False, only check clearings that we can legally move from
-    #     if not ignore_origin_movement_restrictions:
-    #         potential_destination_clearings = [clearing for clearing in potential_destination_clearings
-    #                                            if origin_clearing.can_move_pieces(self, moving_warriors, clearing,
-    #                                                                               requires_rule=True)]
-    #     # Find destinations this move could end in, sorted by [no roost] -> [min enemy pieces] -> [lowest priority]
-    #     sorted_destination_clearings = sort_clearings_by_priority(potential_destination_clearings, descending=True)
-    #     sorted_destination_clearings = sort_clearings_by_enemy_pieces(sorted_destination_clearings, self,
-    #                                                                   descending=False)
-    #     sorted_destination_clearings = sort_clearings_by_any_own_buildings(sorted_destination_clearings, self,
-    #                                                                        descending=False)
-    #     if sorted_destination_clearings:
-    #         return sorted_destination_clearings[0]
 
     def get_max_enemy_rule_value_in_clearing(self, clearing: Clearing) -> int:
         max_enemy_rule_value = 0

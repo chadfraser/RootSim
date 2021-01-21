@@ -125,17 +125,14 @@ class VagabotPlayer(Bot):
             return
         if exhaust_item and not self.satchel.exhaust_items_if_possible():
             return
-        self.move([self.get_pawn()], self.get_pawn_location(), destination)
-        if self.get_pawn_location() == current_location:
-            self.remove_snare_if_it_prevents_movement([self.get_pawn()], cast(Clearing, current_location),
-                                                      [destination], requires_rule=False)
+        self.move([self.get_pawn()], current_location, destination)
 
     def move_along_path(self, path: list[Clearing]) -> None:
         while path and self.satchel.get_unexhausted_undamaged_items():
             next_step = path[0]
             self.move_pawn(next_step)
             # If the move was successful, pop it from the list
-            # Otherwise (e.g., we were in a snared clearing), try again
+            # Otherwise (i.e., we were in a snared clearing), exhaust another item and try again
             if self.get_pawn_location() == next_step:
                 path.pop(0)
 
@@ -145,9 +142,12 @@ class VagabotPlayer(Bot):
         if not (isinstance(pawn_location, Clearing) or isinstance(pawn_location, Forest)):
             return
         destinations = [forest for forest in pawn_location.adjacent_forests]
+        if not destinations:
+            return  # Should never happen!
         # Slip into a random forest
         random.shuffle(destinations)
-        self.move_pawn(destinations[0])  # TODO: This currently runs with SLIP-4, but SLIP-1 or SLIP-2 are more likely
+        # 'Move' explicitly instead of 'move pawn', so we avoid all side effects and movement restrictions (e.g. Snare)
+        self.move([self.get_pawn()], self.get_pawn_location(), destinations[0])
         self.has_slipped = True
 
     def travel_to_target_clearings(self, target_clearings: list[Clearing],
