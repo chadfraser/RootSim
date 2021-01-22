@@ -417,3 +417,8 @@ class MechanicalMarquiseV2Player(Bot):
                 if self.remove_snare_if_it_prevents_movement(warriors_to_move, origin_clearing,
                                                              valid_destination_clearings):
                     return
+
+    # MM2.0 takes half the damage of a normal hit if they're Fortified, and in a clearing with only their buildings
+    def halves_damage(self, battle_clearing: Clearing) -> bool:
+        return (self.has_trait(TRAIT_FORTIFIED) and
+                battle_clearing.get_building_count_for_player(self) == battle_clearing.get_piece_count_for_player(self))

@@ -236,6 +236,9 @@ class Player(ABC):
     def treats_rivers_as_paths(self) -> bool:
         return False
 
+    def halves_damage(self, battle_clearing: Clearing) -> bool:
+        return False
+
     #########################
     #                       #
     # Hand and card methods #
@@ -272,8 +275,9 @@ class Player(ABC):
                 drawn_cards.append(card)
         self.hand.extend(drawn_cards)
 
-    def add_card_to_hand(self, card: Card) -> None:
-        self.hand.append(card)
+    def add_card_to_hand(self, card: Optional[Card]) -> None:
+        if card:
+            self.hand.append(card)
 
     def take_random_card_from_hand(self) -> Optional[Card]:
         if self.hand:

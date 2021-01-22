@@ -1,11 +1,9 @@
 from __future__ import annotations
 import random
-from typing import TYPE_CHECKING, Optional, cast, Callable
+from typing import TYPE_CHECKING, Optional, cast, Callable, Any
 
 from battle_utils import DamageResult
 from bot_resources.bot import Bot
-from bot_resources.bot_factions.mechanical_marquise_v2.mechanical_marquise_v2_player import MechanicalMarquiseV2Player
-from bot_resources.bot_factions.mechanical_marquise_v2.mechanical_marquise_v2_trait import TRAIT_FORTIFIED
 from bot_resources.bot_factions.vagabot.satchel import Satchel
 from bot_resources.bot_factions.vagabot.vagabot_piece_stock import VagabotPieceStock
 from bot_resources.bot_factions.vagabot.vagabot_trait import TRAIT_ADVENTURER, TRAIT_BERSERKER, TRAIT_HELPER, \
@@ -20,7 +18,7 @@ from player_resources.supply import Supply
 from sort_utils import sort_clearings_by_enemy_pieces, \
     sort_clearings_by_priority, sort_paths_by_lexicographic_priority, \
     sort_paths_by_destination_priority, sort_paths_by_distance, sort_players_by_pieces_in_clearing, \
-    sort_players_by_setup_order, sort_players_by_victory_points
+    sort_players_by_setup_order, sort_players_by_victory_points, sort_paths_by_destination_player_list
 
 if TYPE_CHECKING:
     from deck.cards.card import Card
@@ -151,7 +149,7 @@ class VagabotPlayer(Bot):
         self.has_slipped = True
 
     def travel_to_target_clearings(self, target_clearings: list[Clearing],
-                                   sorting_methods: list[Callable] = None) -> None:
+                                   sorting_methods: list[Callable] = None, arguments: list[list[Any]] = None) -> None:
         # Default sorting order for traveling to one of the target clearings:
         # Path length -> destination clearing priority -> lexicographic clearing priority
         # This means we should travel the shortest path, towards the highest-priority destination, and each step to
@@ -160,6 +158,8 @@ class VagabotPlayer(Bot):
             sorting_methods = [sort_paths_by_lexicographic_priority,
                                sort_paths_by_destination_priority,
                                sort_paths_by_distance]
+        if not arguments:
+            arguments = [[] for _ in sorting_methods]
 
         pawn_location = self.get_pawn_location()
         # Sanity check
@@ -173,8 +173,8 @@ class VagabotPlayer(Bot):
         if not potential_movement_routes:
             return
         # Sort in reverse order from our tie-breaking priority:
-        for sorting_method in sorting_methods:
-            potential_movement_routes = sorting_method(potential_movement_routes)
+        for sorting_method, args in zip(sorting_methods, arguments):
+            potential_movement_routes = sorting_method(potential_movement_routes, *args)
         # sorted_potential_movement_routes = sort_paths_by_lexicographic_priority(potential_movement_routes)
         # sorted_potential_movement_routes = sort_paths_by_destination_priority(sorted_potential_movement_routes)
         # sorted_potential_movement_routes = sort_paths_by_distance(sorted_potential_movement_routes)
@@ -188,7 +188,7 @@ class VagabotPlayer(Bot):
         self.travel_to_target_clearings(ruin_clearings)
         if self.get_pawn_location() in ruin_clearings:
             if self.satchel.exhaust_items_if_possible():
-                ruin_clearings[0].explore_ruin(self)
+                cast(Clearing, self.get_pawn_location()).explore_ruin(self)
 
     def special_step(self):
         if self.character.can_perform_special_action() and self.satchel.exhaust_items_if_possible():
@@ -206,6 +206,10 @@ class VagabotPlayer(Bot):
 
     def aid_step(self) -> None:
         players_with_crafted_items = [player for player in self.game.players if player.crafted_items]
+        sorted_players_with_crafted_items = sort_players_by_setup_order(players_with_crafted_items)
+        sorted_players_with_crafted_items = sort_players_by_victory_points(sorted_players_with_crafted_items,
+                                                                           descending=False)
+
         valid_aid_clearings = [clearing for clearing in self.game.clearings() if
                                any(clearing.is_player_in_location(player) for player in players_with_crafted_items)]
         if not valid_aid_clearings:
@@ -214,24 +218,15 @@ class VagabotPlayer(Bot):
             else:
                 return
 
-        # TODO: This does distance -> destination priority -> lexicographic priority
-        # TODO: Should do distance -> low VP of aid player in clearing -> destination priority -> lexicographic priority
-        self.travel_to_target_clearings(valid_aid_clearings)
-
-        # # TODO: Calculate distance to valid_aid_clearings and move to nearest one
-        # sorted_valid_aid_clearings = sort_clearings_by_priority(valid_aid_clearings)
-        # sorted_valid_aid_clearings = sort_clearings_by_distance(sorted_valid_aid_clearings, pawn_location,
-        #                                                         descending=True)
-        # if not sorted_valid_aid_clearings:
-        #     return
-        # target_clearing = sorted_valid_aid_clearings[0]
-        # # TODO: Calculate shortest path to first clearing
-        # # TODO: Don't just take index 0 - find the route of minimal priority
-        # path_to_target_clearing = pawn_location.find_shortest_legal_paths_to_destination_clearing(
-        #     self, self.get_pawn(), target_clearing)[0]
-        # while self.satchel.get_unexhausted_undamaged_items() and path_to_target_clearing:
-        #     next_destination = path_to_target_clearing.pop(0)
-        #     self.move_pawn(next_destination)
+        self.travel_to_target_clearings(valid_aid_clearings,
+                                        sorting_methods=[sort_paths_by_lexicographic_priority,
+                                                         sort_paths_by_destination_priority,
+                                                         sort_paths_by_destination_player_list,
+                                                         sort_paths_by_distance],
+                                        arguments=[[],
+                                                   [],
+                                                   [sorted_players_with_crafted_items],
+                                                   []])
 
         if self.get_pawn_location() in valid_aid_clearings:
             valid_aid_players = [player for player in
@@ -243,9 +238,9 @@ class VagabotPlayer(Bot):
                 item_taken = sorted_valid_aid_players[0].crafted_items.pop()
                 self.get_item(item_taken)
                 self.add_victory_points(1)
-                # TODO: The card is not drawn for bots
+                if not isinstance(sorted_valid_aid_players[0], Player):
+                    sorted_valid_aid_players[0].add_card_to_hand(self.game.draw_card())
                 sorted_valid_aid_players[0].add_victory_points(1)
-                # sorted_valid_aid_players[0].add_card_to_hand(self.game.draw_card())
 
     def helper_aid_step(self) -> None:
         player_to_aid = self.get_helper_aid_target()
@@ -254,30 +249,13 @@ class VagabotPlayer(Bot):
 
         valid_aid_clearings = [clearing for clearing in self.game.clearings() if
                                clearing.is_player_in_location(player_to_aid)]
-        # TODO: This does distance -> destination priority -> lexicographic priority
-        # TODO: Should do distance -> low VP of aid player in clearing -> destination priority -> lexicographic priority
         self.travel_to_target_clearings(valid_aid_clearings)
-
-        # # TODO: Calculate distance to valid_aid_clearings and move to nearest one
-        # sorted_valid_aid_clearings = sort_clearings_by_priority(valid_aid_clearings)
-        # sorted_valid_aid_clearings = sort_clearings_by_distance(sorted_valid_aid_clearings, pawn_location,
-        #                                                         descending=True)
-        # if not sorted_valid_aid_clearings:
-        #     return
-        # target_clearing = sorted_valid_aid_clearings[0]
-        # # TODO: Calculate shortest path to first clearing
-        # # TODO: Don't just take index 0 - find the route of minimal priority
-        # path_to_target_clearing = pawn_location.find_shortest_legal_paths_to_destination_clearing(
-        #     self, self.get_pawn(), target_clearing)[0]
-        # while self.satchel.get_unexhausted_undamaged_items() and path_to_target_clearing:
-        #     next_destination = path_to_target_clearing.pop(0)
-        #     self.move_pawn(next_destination)
 
         if self.get_pawn_location() in valid_aid_clearings and self.satchel.exhaust_items_if_possible():
             self.add_victory_points(1)
-            # TODO: The card is not drawn for bots
+            if not isinstance(player_to_aid, Player):
+                player_to_aid.add_card_to_hand(self.game.draw_card())
             player_to_aid.add_victory_points(1)
-            # sorted_valid_aid_players[0].add_card_to_hand(self.game.draw_card())
 
     def get_helper_aid_target(self) -> Optional[Player]:
         sorted_players = sort_players_by_setup_order(self.game.players)
@@ -326,9 +304,9 @@ class VagabotPlayer(Bot):
                                   clearing.is_any_other_player_in_location(self)]
         sorted_valid_battle_clearings = sort_clearings_by_priority(valid_battle_clearings)
         sorted_valid_battle_clearings = sort_clearings_by_enemy_pieces(sorted_valid_battle_clearings, self)
-        target_battle_clearing = sorted_valid_battle_clearings[0]
         if not sorted_valid_battle_clearings:
             return
+        target_battle_clearing = sorted_valid_battle_clearings[0]
         self.travel_to_target_clearings([target_battle_clearing], sorting_methods=[])
 
         # The first battle each turn requires exhausting one item. Future battles require exhausting two items
@@ -382,11 +360,9 @@ class VagabotPlayer(Bot):
         if self.has_trait(TRAIT_MARKSMAN):
             # Fortified MM is currently the only way for a piece to require two hits to be removed in battle
             # Marksman Vagabot is currently the only way for a player to deal hits in battle to a bot before the roll
-            # So this is ugly hardcoding that checks if the Marksman would bounce off of a Fortified MM (If the only MM
-            # pieces in the clearing are buildings and the MM player is Fortified), and does two hits in that case with
-            # Marksman instead of 1, to counteract the MM Fortified effect of halving and flooring hits to buildings
-            if (isinstance(defender, MechanicalMarquiseV2Player) and defender.has_trait(TRAIT_FORTIFIED) and
-                    clearing.get_building_count_for_player(defender) == clearing.get_piece_count_for_player(defender)):
+            # To prevent messy logic in handling taking hits, we just deal two hits of damage in this case, which will
+            # still functionally remove one building
+            if defender.halves_damage(clearing):
                 marksman_damage_result = defender.suffer_damage(clearing, 2, self, is_attacker=False)
             else:
                 marksman_damage_result = defender.suffer_damage(clearing, 1, self, is_attacker=False)
@@ -418,6 +394,7 @@ class VagabotPlayer(Bot):
         # just in case
         return min(roll, 1 + len(self.satchel.battle_track), 3)
 
+    # TODO: Mercenaries from Involved Rivetfolk
     def suffer_damage(self, clearing: Clearing, hits: int, opponent: Player, is_attacker: bool) -> DamageResult:
         if hits:
             exhausted_items = self.satchel.get_exhausted_undamaged_items(-1)

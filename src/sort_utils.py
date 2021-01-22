@@ -169,3 +169,21 @@ def sort_paths_by_lexicographic_priority(paths: list[list[Clearing]], descending
 
 def sort_paths_by_destination_priority(paths: list[list[Clearing]], descending: bool = False) -> list[list[Clearing]]:
     return sorted(paths, key=lambda p: p[-1].priority, reverse=descending)
+
+
+def sort_paths_by_destination_victory_point_priority(paths: list[list[Clearing]],
+                                                     descending: bool = False) -> list[list[Clearing]]:
+    return sorted(paths, key=lambda p: p[-1].priority, reverse=descending)
+
+
+def sort_paths_by_destination_player_list(paths: list[list[Clearing]], supplemental_player_list: list[Player],
+                                          descending: bool = False) -> list[list[Clearing]]:
+    return sorted(paths, key=lambda p: get_lowest_sorted_player_index_clearing(p[-1], supplemental_player_list),
+                  reverse=descending)
+
+
+def get_lowest_sorted_player_index_clearing(clearing: Clearing, players: list[Player], descending: bool = False) -> int:
+    for idx, player in players:
+        if player in clearing.get_all_players_in_location():
+            return idx * (not descending)
+    return 100 * (not descending)  # TODO: Implement this better

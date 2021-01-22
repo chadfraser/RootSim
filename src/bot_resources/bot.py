@@ -59,9 +59,10 @@ class Bot(Player, ABC):
     def has_trait(self, trait: Trait) -> bool:
         return trait in self.traits
 
-    def add_card_to_hand(self, card: Card) -> None:
+    def add_card_to_hand(self, card: Optional[Card]) -> None:
         self.add_victory_points(1)
-        self.game.discard_card(card)
+        if card:
+            self.game.discard_card(card)
 
     def place_pieces_in_one_of_clearings(self, pieces_to_place: list[Piece], sorted_clearings: list[Clearing],
                                          ignore_building_slots: bool = False) -> None:
