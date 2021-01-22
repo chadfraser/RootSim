@@ -70,6 +70,9 @@ class Player(ABC):
     def evening(self) -> None:
         pass
 
+    def between_turns(self) -> None:
+        pass
+
     def add_victory_points(self, victory_points: int) -> None:
         self.victory_points = max(0, self.victory_points + victory_points)
         if self.victory_points >= 30:

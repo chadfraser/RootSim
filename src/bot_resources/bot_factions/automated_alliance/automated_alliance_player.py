@@ -74,6 +74,8 @@ class AutomatedAlliancePlayer(Bot):
             self.wildfire()
         self.game.discard_card(self.order_card)
         self.order_card = None
+
+    def between_turns(self) -> None:
         self.players_who_have_removed_sympathy_since_last_turn = set()
 
 ########################################################################################################################
@@ -241,8 +243,6 @@ class AutomatedAlliancePlayer(Bot):
             for i in range(amount_of_tokens_removed):
                 removed_pieces.append(tokens[i])
                 # If the Popularity trait is used, players can't score for sympathy if they already have since last turn
-                # This breaks with Instigate since that's the only way for a player to remove a token on someone else's
-                # turn... but let's ignore that for now!
                 if (not self.has_trait(TRAIT_POPULARITY) or
                         opponent not in self.players_who_have_removed_sympathy_since_last_turn):
                     points_awarded += tokens[i].get_score_for_removal()
