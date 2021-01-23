@@ -30,10 +30,12 @@ class Game:
     item_supply: list['ItemToken']
     turn_order: list['Player']
     turn_player: Optional['Player']
+    winner: Optional['Player']
 
     def __init__(self, players: list['Player'] = None, factions: list['Faction'] = None) -> None:
         self.deck = BaseDeck(self)
         self.quest_deck = QuestDeck()
+        self.winner = None
 
         if players is None:
             if factions:
@@ -44,13 +46,21 @@ class Game:
         self.board_map = AutumnBoardMap(self)
         self.item_supply = []
         # TODO: Turn order, turn player
-        self.turn_order = []
-        if players:
-            self.turn_player = players[0]
+        self.turn_order = [player for player in self.players]
+        if self.turn_order:
+            self.turn_player = self.turn_order[0]
         else:
             self.turn_player = None
 
         self.initialize_item_supply()
+
+        while not self.winner:
+            self.turn_player.take_turn()
+            next_turn_player_index = self.turn_order.index(self.turn_player) + 1
+            next_turn_player_index %= len(self.turn_order)
+            self.turn_player = self.turn_order[next_turn_player_index]
+            for player in self.players:
+                player.between_turns()
 
     def build_player_by_faction(self, faction: Faction) -> 'Player':
         if faction == Faction.MECHANICAL_MARQUISE_2_0:
@@ -87,9 +97,10 @@ class Game:
             if item_token.item == item:
                 return item_token
 
-    # TODO: Implement
-    def win(self, player: Player) -> None:
-        pass
+    def win(self, player: 'Player') -> None:
+        if self.winner:
+            return
+        self.winner = player
 
     def draw_card(self) -> Optional['Card']:
         return self.deck.draw_card()
@@ -114,3 +125,6 @@ class Game:
             self.item_supply.remove(item_token)
             player.get_item(item_token)
             player.add_victory_points(score_points)
+
+# TODO: Remove after testing
+# gg = Game(factions=[Faction.MECHANICAL_MARQUISE_2_0, Faction.ELECTRIC_EYRIE, Faction.AUTOMATED_ALLIANCE, Faction.VAGABOT])

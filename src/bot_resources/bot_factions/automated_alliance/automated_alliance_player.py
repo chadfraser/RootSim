@@ -88,7 +88,7 @@ class AutomatedAlliancePlayer(Bot):
         valid_revolt_clearings = []
         for base in self.piece_stock.get_bases():
             # Skip bases that don't match the order card
-            if not Suit.are_suits_equal(base.location, self.order_card.suit):
+            if not Suit.are_suits_equal(base.suit, self.order_card.suit):
                 continue
             # Skip bases that are on the map
             if not isinstance(base.location, Supply):

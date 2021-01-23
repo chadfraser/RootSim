@@ -46,7 +46,7 @@ class Clearing(Location):
         return self.priority < other.priority
 
     def __eq__(self, other):
-        return self.priority == other.priority
+        return isinstance(other, Clearing) and self.priority == other.priority
 
     def __hash__(self):
         return hash(self.priority)

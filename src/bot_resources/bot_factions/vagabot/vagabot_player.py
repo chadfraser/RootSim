@@ -50,6 +50,7 @@ class VagabotPlayer(Bot):
         self.has_slipped = False
         self.has_battled = False
         self.character = character
+        self.character.set_player(self)
         self.quest = self.game.quest_deck.draw_quest_card()
         self.satchel = Satchel(self.game, self)
 

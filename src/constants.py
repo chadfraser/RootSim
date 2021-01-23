@@ -6,10 +6,10 @@ class Faction(Enum):
     MECHANICAL_MARQUISE_2_0 = 'Mechanical Marquise 2.0'
     ELECTRIC_EYRIE = 'Electric Eyrie'
     AUTOMATED_ALLIANCE = 'Automated Alliance'
-    VAGABOT = 'Vagabot',
-    COGWHEEL_CULT = 'Cogwheel Cult',
-    RIVETFOLK = 'Rivetfolk',
-    DUMMY_DUCHY = 'Dummy Duchy',
+    VAGABOT = 'Vagabot'
+    COGWHEEL_CULT = 'Cogwheel Cult'
+    RIVETFOLK = 'Rivetfolk'
+    DUMMY_DUCHY = 'Dummy Duchy'
     CONTRAPTION_CONSPIRACY = 'Contraption Conspiracy'
 
     def is_ruin_exploring_faction(self) -> bool:
