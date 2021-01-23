@@ -51,7 +51,7 @@ class Bot(Player, ABC):
 
     def reveal_order(self) -> None:
         self.order_card = self.game.draw_card()
-        self.game.log(f'{self} reveals {self.order_card} as the order card.')
+        self.game.log(f'{self} reveals {self.order_card} as the order card.', logging_faction=self.faction)
         if not self.order_card:
             self.game.win(self)  # Instant win to prevent a softlock if the deck and discard pile are both empty
         if isinstance(self.order_card, ItemCard) and self.order_card.can_be_crafted(self):

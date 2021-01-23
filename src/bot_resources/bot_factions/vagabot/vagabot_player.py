@@ -63,7 +63,7 @@ class VagabotPlayer(Bot):
         forests_with_maximum_adjacent_clearings = []
         for forest in self.game.board_map.forests:
             if maximum_adjacent_clearings < len(forest.adjacent_clearings):
-                maximum_adjacent_clearings = forest.adjacent_clearings
+                maximum_adjacent_clearings = len(forest.adjacent_clearings)
                 forests_with_maximum_adjacent_clearings = [forest]
             elif maximum_adjacent_clearings == len(forest.adjacent_clearings):
                 forests_with_maximum_adjacent_clearings.append(forest)
@@ -138,13 +138,18 @@ class VagabotPlayer(Bot):
                                                       [destination], requires_rule=False)
 
     def move_along_path(self, path: list['Clearing']) -> None:
+        self.game.log(f'{self} moves along path: from {self.get_pawn_location()} -> {path}',
+                      logging_faction=self.faction)
         while path and self.satchel.get_unexhausted_undamaged_items():
+            if self.get_pawn_location() == path[0]:
+                path.pop(0)
+                continue
             next_step = path[0]
             self.move_pawn(next_step)
             # If the move was successful, pop it from the list
             # Otherwise (e.g., we were in a snared clearing), try again
-            if self.get_pawn_location() == next_step:
-                path.pop(0)
+            # if self.get_pawn_location() == next_step:
+            #     path.pop(0)
 
     def slip_into_forest(self) -> None:
         pawn_location = self.get_pawn_location()
@@ -253,7 +258,7 @@ class VagabotPlayer(Bot):
                 item_taken = sorted_valid_aid_players[0].crafted_items.pop()
                 self.get_item(item_taken)
                 self.add_victory_points(1)
-                if not isinstance(sorted_valid_aid_players[0], Player):
+                if not isinstance(sorted_valid_aid_players[0], Bot):
                     sorted_valid_aid_players[0].add_card_to_hand(self.game.draw_card())
                 sorted_valid_aid_players[0].add_victory_points(1)
 
@@ -301,8 +306,12 @@ class VagabotPlayer(Bot):
         if self.get_pawn_location() in valid_battle_clearings and self.satchel.exhaust_items_if_possible(battle_cost):
             self.battle(cast(Clearing, self.get_pawn_location()), target_opponent)
             self.has_battled = True
+        # If we didn't end the battle step in a valid battle clearing, clearly we aren't able to reach any of the
+        # clearings we're supposed to battle in
+        else:
+            return
         # Repeat the battle step unless you have the Adventurer trait
-        if not self.has_trait(TRAIT_ADVENTURER):
+        if not self.has_trait(TRAIT_ADVENTURER) and self.satchel.get_unexhausted_undamaged_items():
             self.battle_step()
 
     def get_battle_target(self) -> Optional[Player]:
@@ -331,7 +340,7 @@ class VagabotPlayer(Bot):
             battle_cost = 1
         if self.get_pawn_location() == target_battle_clearing and self.satchel.exhaust_items_if_possible(battle_cost):
             self.berserker_initiate_battle(target_battle_clearing)
-        if not self.has_trait(TRAIT_ADVENTURER):
+        if not self.has_trait(TRAIT_ADVENTURER) and self.satchel.get_unexhausted_undamaged_items():
             self.berserker_battle_step()
 
     def berserker_initiate_battle(self, clearing: Clearing) -> None:
@@ -395,6 +404,7 @@ class VagabotPlayer(Bot):
                                     self.supplementary_score_for_removed_pieces_in_battle(
                                         defender, marksman_damage_result.removed_pieces, is_attacker=True))
         random_rolls = (random.randint(0, 3), random.randint(0, 3))
+        self.game.log(f'{self} rolls {random_rolls[0]}, {random_rolls[1]}.', logging_faction=self.faction)
         # Defender allocates the rolls - high roll to attacker, low roll to defender, except in the case of Veterans
         roll_result = defender.allocate_rolls_as_defender(random_rolls)
         # Each battler caps their hits and adds their relevant bonus hits
@@ -402,6 +412,8 @@ class VagabotPlayer(Bot):
                          self.get_bonus_hits(clearing, defender, is_attacker=True))
         defender_hits = (defender.cap_rolled_hits(clearing, roll_result.defender_roll) +
                          defender.get_bonus_hits(clearing, defender, is_attacker=False))
+        self.game.log(f'{self} does {attacker_hits} hits. {defender} does {defender_hits} hits.',
+                      logging_faction=self.faction)
         # Each battler removes their pieces and calculates how much VP the opponent should earn from the battle
         defender_damage_result = defender.suffer_damage(clearing, attacker_hits, self, is_attacker=False)
         attacker_damage_result = self.suffer_damage(clearing, defender_hits, defender, is_attacker=True)
@@ -421,18 +433,23 @@ class VagabotPlayer(Bot):
 
     # TODO: Mercenaries from Involved Rivetfolk
     def suffer_damage(self, clearing: Clearing, hits: int, opponent: Player, is_attacker: bool) -> DamageResult:
+        damaged_item_count = 0
         if hits:
             exhausted_items = self.satchel.get_exhausted_undamaged_items(-1)
             amount_of_items_damaged = min(hits, len(exhausted_items))
             hits -= amount_of_items_damaged
             for i in range(amount_of_items_damaged):
                 self.satchel.damage_specific_item(exhausted_items[i])
+                damaged_item_count += 1
         if hits:
             unexhausted_items = self.satchel.get_unexhausted_undamaged_items(-1)
             amount_of_items_damaged = min(hits, len(unexhausted_items))
             hits -= amount_of_items_damaged
             for i in range(amount_of_items_damaged):
                 self.satchel.damage_specific_item(unexhausted_items[i])
+                damaged_item_count += 1
+
+        self.game.log(f'{self} damages {damaged_item_count} item(s).', logging_faction=self.faction)
         return DamageResult(removed_pieces=[], points_awarded=0)
 
     def supplementary_score_for_removed_pieces_in_battle(self, other_player: Player, removed_pieces: list[Piece],

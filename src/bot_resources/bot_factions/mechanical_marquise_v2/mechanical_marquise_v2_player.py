@@ -50,7 +50,7 @@ class MechanicalMarquiseV2Player(Bot):
         starting_clearing.add_piece(self, self.piece_stock.get_keep())
         self.place_initial_garrison()
         self.place_initial_buildings()
-        self.game.log(f'{self} starts in {starting_clearing}.')
+        self.game.log(f'{self} starts in {starting_clearing}.', logging_faction=self.faction)
 
     def place_initial_garrison(self) -> None:
         keep_clearing = self.piece_stock.get_keep().location
@@ -133,7 +133,7 @@ class MechanicalMarquiseV2Player(Bot):
         potential_targets = sort_players_by_victory_points(potential_targets)
         potential_targets = sort_players_by_pieces_in_clearing(potential_targets, clearing)
         if potential_targets:
-            self.game.log(f'{self} battles {potential_targets[0]} in {clearing}.')
+            self.game.log(f'{self} battles {potential_targets[0]} in {clearing}.', logging_faction=self.faction)
             self.battle(clearing, potential_targets[0])
 
     def suffer_damage(self, clearing: 'Clearing', hits: int, opponent: 'Player', is_attacker: bool) -> DamageResult:
@@ -165,9 +165,8 @@ class MechanicalMarquiseV2Player(Bot):
                 removed_pieces.append(buildings[i])
                 points_awarded += buildings[i].get_score_for_removal()
 
-        self.game.log(f'{self} loses the following pieces: {removed_pieces}')
+        self.game.log(f'{self} loses the following pieces: {removed_pieces}', logging_faction=self.faction)
         clearing.remove_pieces(self, removed_pieces)
-        self.game.log(f'{self} loses the following pieces: {removed_pieces}')
         if not is_attacker:
             # Hospitals only works as the defender
             self.apply_field_hospitals(removed_pieces)

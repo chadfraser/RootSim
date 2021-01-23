@@ -50,6 +50,7 @@ class ElectricEyriePlayer(Bot):
         starting_clearing = self.get_corner_homeland()
         starting_clearing.add_piece(self, self.piece_stock.get_roosts()[0])
         self.place_initial_warriors()
+        self.game.log(f'{self} starts in {starting_clearing}.', logging_faction=self.faction)
 
     def place_initial_warriors(self):
         starting_clearing = self.piece_stock.get_roosts()[0].location
@@ -248,6 +249,7 @@ class ElectricEyriePlayer(Bot):
 
     def battle(self, clearing: 'Clearing', defender: 'Player') -> None:
         random_rolls = (random.randint(0, 3), random.randint(0, 3))
+        self.game.log(f'{self} rolls {random_rolls[0]}, {random_rolls[1]}.', logging_faction=self.faction)
         # Defender allocates the rolls - high roll to attacker, low roll to defender, except in the case of Veterans
         roll_result = defender.allocate_rolls_as_defender(random_rolls)
         # Each battler caps their hits and adds their relevant bonus hits
@@ -255,6 +257,8 @@ class ElectricEyriePlayer(Bot):
                          self.get_bonus_hits(clearing, defender, is_attacker=True))
         defender_hits = (defender.cap_rolled_hits(clearing, roll_result.defender_roll) +
                          defender.get_bonus_hits(clearing, defender, is_attacker=False))
+        self.game.log(f'{self} does {attacker_hits} hits. {defender} does {defender_hits} hits.',
+                      logging_faction=self.faction)
         # Each battler removes their pieces and calculates how much VP the opponent should earn from the battle
         defender_damage_result = defender.suffer_damage(clearing, attacker_hits, self, is_attacker=False)
         attacker_damage_result = self.suffer_damage(clearing, defender_hits, defender, is_attacker=True)
@@ -298,7 +302,7 @@ class ElectricEyriePlayer(Bot):
             self.turmoil = True
 
     def get_score_for_roosts(self) -> int:
-        return max(0, len(self.get_unplaced_buildings()) - 1)
+        return max(0, 6 - len(self.get_unplaced_buildings()))
 
     #########################
     #                       #

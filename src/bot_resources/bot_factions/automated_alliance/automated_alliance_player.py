@@ -44,9 +44,6 @@ class AutomatedAlliancePlayer(Bot):
         self.has_revolted = False
         self.players_who_have_removed_sympathy_since_last_turn = set()
 
-    def setup(self) -> None:
-        pass
-
     ######################
     #                    #
     # Turn order methods #
@@ -114,6 +111,8 @@ class AutomatedAlliancePlayer(Bot):
         players_in_clearing = target_clearing.get_all_players_in_location()
         removed_pieces = []
         for player in players_in_clearing:
+            if player == self:
+                continue
             for piece in target_clearing.get_pieces_for_player(player):
                 removed_pieces.append(piece)
             removed_pieces.extend(target_clearing.remove_all_pieces_of_player(player))
@@ -190,7 +189,7 @@ class AutomatedAlliancePlayer(Bot):
                                              score: bool = True) -> None:
         unplaced_sympathy = [token for token in self.get_unplaced_tokens()]
         unplaced_sympathy_count = len(unplaced_sympathy)
-        sorted_sympathy_adjacent_clearings = sort_clearings_by_priority(sympathy_adjacent_clearings, descending=False)
+        sorted_sympathy_adjacent_clearings = sort_clearings_by_priority(sympathy_adjacent_clearings, descending=True)
         self.place_pieces_in_one_of_clearings(unplaced_sympathy[:1], sorted_sympathy_adjacent_clearings)
         if score:
             if unplaced_sympathy_count > len(self.get_unplaced_tokens()):
@@ -275,6 +274,8 @@ class AutomatedAlliancePlayer(Bot):
             for i in range(amount_of_buildings_removed):
                 removed_pieces.append(buildings[i])
                 points_awarded += buildings[i].get_score_for_removal()
+
+        self.game.log(f'{self} loses the following pieces: {removed_pieces}', logging_faction=self.faction)
         clearing.remove_pieces(self, removed_pieces)
         return DamageResult(removed_pieces=removed_pieces, points_awarded=points_awarded)
 
