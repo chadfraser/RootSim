@@ -1,4 +1,5 @@
 from __future__ import annotations
+import logging
 from typing import Optional, TYPE_CHECKING, Type
 
 from board_map.autumn_board_map import AutumnBoardMap
@@ -12,6 +13,7 @@ from deck.base_deck import BaseDeck
 from deck.cards.dominance_card import DominanceCard
 from deck.quest_deck import QuestDeck
 from pieces.item_token import ItemToken
+from sort_utils import sort_players_by_setup_order
 
 if TYPE_CHECKING:
     from board_map.board_map import BoardMap
@@ -31,8 +33,12 @@ class Game:
     turn_order: list['Player']
     turn_player: Optional['Player']
     winner: Optional['Player']
+    logger: logging.Logger
 
     def __init__(self, players: list['Player'] = None, factions: list['Faction'] = None) -> None:
+        self.logger = logging.getLogger(__name__)
+        logging.basicConfig(level=logging.INFO)
+
         self.deck = BaseDeck(self)
         self.quest_deck = QuestDeck()
         self.winner = None
@@ -45,7 +51,7 @@ class Game:
         self.players = players
         self.board_map = AutumnBoardMap(self)
         self.item_supply = []
-        # TODO: Turn order, turn player
+
         self.turn_order = [player for player in self.players]
         if self.turn_order:
             self.turn_player = self.turn_order[0]
@@ -54,7 +60,11 @@ class Game:
 
         self.initialize_item_supply()
 
+        for player in sort_players_by_setup_order(self.players):
+            player.setup()
+
         while not self.winner:
+            self.log(f'--{self.turn_player}--')
             self.turn_player.take_turn()
             next_turn_player_index = self.turn_order.index(self.turn_player) + 1
             next_turn_player_index %= len(self.turn_order)
@@ -101,6 +111,7 @@ class Game:
         if self.winner:
             return
         self.winner = player
+        self.log(f'{player} wins with {player.victory_points} VP.')
 
     def draw_card(self) -> Optional['Card']:
         return self.deck.draw_card()
@@ -114,17 +125,24 @@ class Game:
 
     # Skips things like Lost Souls - used to empty the Lost Souls
     def send_card_to_discard_pile(self, card: 'Card') -> None:
+        self.log(f'{card} is discarded.')
         if isinstance(card, DominanceCard):
             self.deck.dominance_region.append(card)
         else:
             self.deck.discard_pile.append(card)
 
-    def craft_item(self, item: Item, player: 'Player', score_points: int) -> None:
+    def craft_item(self, item: 'Item', player: 'Player', score_points: int) -> None:
         item_token = self.get_item_if_available(item)
         if item_token:
             self.item_supply.remove(item_token)
             player.get_item(item_token)
             player.add_victory_points(score_points)
+            self.log(f'{player} crafts {item} for {score_points} VP.')
+
+    def log(self, message: str, log_level: int = logging.INFO) -> None:
+        self.logger.log(log_level, message)
+
 
 # TODO: Remove after testing
-# gg = Game(factions=[Faction.MECHANICAL_MARQUISE_2_0, Faction.ELECTRIC_EYRIE, Faction.AUTOMATED_ALLIANCE, Faction.VAGABOT])
+# gg = Game(factions=[Faction.MECHANICAL_MARQUISE_2_0, Faction.ELECTRIC_EYRIE, Faction.AUTOMATED_ALLIANCE,
+#                     Faction.VAGABOT])
