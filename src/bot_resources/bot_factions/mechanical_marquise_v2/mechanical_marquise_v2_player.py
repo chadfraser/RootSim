@@ -50,6 +50,7 @@ class MechanicalMarquiseV2Player(Bot):
         starting_clearing.add_piece(self, self.piece_stock.get_keep())
         self.place_initial_garrison()
         self.place_initial_buildings()
+        self.game.log(f'{self} starts in {starting_clearing}.')
 
     def place_initial_garrison(self) -> None:
         keep_clearing = self.piece_stock.get_keep().location
@@ -66,7 +67,7 @@ class MechanicalMarquiseV2Player(Bot):
         for building in (self.piece_stock.get_sawmills()[0], self.piece_stock.get_workshops()[0],
                          self.piece_stock.get_recruiters()[0]):
             target_clearing = valid_initial_building_clearings.pop()
-            target_clearing.add_piece(self, building)
+            target_clearing.add_pieces(self, [building])
 
     ######################
     #                    #
@@ -132,6 +133,7 @@ class MechanicalMarquiseV2Player(Bot):
         potential_targets = sort_players_by_victory_points(potential_targets)
         potential_targets = sort_players_by_pieces_in_clearing(potential_targets, clearing)
         if potential_targets:
+            self.game.log(f'{self} battles {potential_targets[0]} in {clearing}.')
             self.battle(clearing, potential_targets[0])
 
     def suffer_damage(self, clearing: 'Clearing', hits: int, opponent: 'Player', is_attacker: bool) -> DamageResult:
@@ -162,7 +164,10 @@ class MechanicalMarquiseV2Player(Bot):
             for i in range(amount_of_buildings_removed):
                 removed_pieces.append(buildings[i])
                 points_awarded += buildings[i].get_score_for_removal()
+
+        self.game.log(f'{self} loses the following pieces: {removed_pieces}')
         clearing.remove_pieces(self, removed_pieces)
+        self.game.log(f'{self} loses the following pieces: {removed_pieces}')
         if not is_attacker:
             # Hospitals only works as the defender
             self.apply_field_hospitals(removed_pieces)
@@ -259,7 +264,8 @@ class MechanicalMarquiseV2Player(Bot):
         sorted_ruled_clearings = self.get_ruled_clearings_sorted_by_build_order()
         if not building_to_build:
             return
-        self.place_pieces_in_one_of_clearings([building_to_build], sorted_ruled_clearings)
+        if self.place_pieces_in_one_of_clearings([building_to_build], sorted_ruled_clearings):
+            self.built_building_this_turn = True
         # TODO: Cleanup/remove
         # for clearing in sorted_ruled_clearings:
         #     if clearing.can_place_piece(self, building_to_build):

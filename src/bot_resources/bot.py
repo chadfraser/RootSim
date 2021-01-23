@@ -38,16 +38,20 @@ class Bot(Player, ABC):
     def get_corner_homeland(self) -> 'Clearing':
         corner_clearings = self.game.board_map.get_corner_clearings()
         # The only corner clearings that start with buildings or tokens on them are homeland corner clearings
-        corner_homelands = [clearing for clearing in corner_clearings if clearing.get_total_token_count() > 0 or
-                            clearing.get_total_building_count() > 0]
-        if len(corner_homelands) == 3:
-            return [clearing for clearing in corner_clearings if clearing not in corner_homelands][0]
+        open_corner_homelands = [clearing for clearing in corner_clearings if clearing.get_total_token_count() == 0 and
+                                 clearing.get_total_building_count() == 0]
+        if len(open_corner_homelands) == 3:
+            occupied_corner_homeland = [clearing for clearing in corner_clearings if
+                                        clearing.get_total_token_count() > 0 or
+                                        clearing.get_total_building_count() > 0][0]
+            return occupied_corner_homeland.opposite_corner_clearing
         else:
-            random.shuffle(corner_homelands)
-            return corner_homelands[0]
+            random.shuffle(open_corner_homelands)
+            return open_corner_homelands[0]
 
     def reveal_order(self) -> None:
         self.order_card = self.game.draw_card()
+        self.game.log(f'{self} reveals {self.order_card} as the order card.')
         if not self.order_card:
             self.game.win(self)  # Instant win to prevent a softlock if the deck and discard pile are both empty
         if isinstance(self.order_card, ItemCard) and self.order_card.can_be_crafted(self):
@@ -65,9 +69,9 @@ class Bot(Player, ABC):
             self.game.discard_card(card)
 
     def place_pieces_in_one_of_clearings(self, pieces_to_place: list['Piece'], sorted_clearings: list['Clearing'],
-                                         ignore_building_slots: bool = False) -> None:
+                                         ignore_building_slots: bool = False) -> bool:
         if not pieces_to_place:
-            return
+            return False
         # Ensure that we can place the pieces in the given clearings
         valid_placing_clearings = [clearing for clearing in sorted_clearings if
                                    clearing.can_place_pieces(self, pieces_to_place)]
@@ -75,8 +79,9 @@ class Bot(Player, ABC):
         # If we couldn't place the pieces anywhere, check if it was due to a snare, and remove that snare if so
         if not valid_placing_clearings:
             self.remove_snare_if_it_prevents_placing(pieces_to_place, sorted_clearings, ignore_building_slots)
-            return
+            return False
         self.supply.relocate_pieces(self, pieces_to_place, valid_placing_clearings[0])
+        return True
 
     def place_pieces_spread_among_clearings(self, pieces_to_place: list['Piece'], sorted_clearings: list['Clearing'],
                                             ignore_building_slots: bool = False) -> None:
