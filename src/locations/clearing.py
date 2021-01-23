@@ -40,7 +40,7 @@ class Clearing(Location):
 
     # TODO: Remove after testing
     def __repr__(self):
-        return str(self.priority) + str(self.suit.value)
+        return f'{self.priority}({self.suit.value[0]})'
 
     def __lt__(self, other):
         return self.priority < other.priority
@@ -145,7 +145,7 @@ class Clearing(Location):
                                                           destination: 'Clearing',
                                                           ignore_move: bool = False) -> list[list['Clearing']]:
         if self == destination:
-            return [[]]
+            return [[self]]
         if not destination.can_move_piece_into(player, moving_piece):
             return []
 
@@ -166,7 +166,9 @@ class Clearing(Location):
                 next_path = [c for c in current_path]
                 next_path.append(adjacent_clearing)
                 if adjacent_clearing == destination:
-                    all_shortest_paths.append(current_path)
+                    if all_shortest_paths and len(all_shortest_paths[0]) < len(next_path):
+                        continue
+                    all_shortest_paths.append(next_path)
                 # Breadth-first-search: Once we find a path to the destination N clearings away, we know no path to
                 # the destination is shorter than N, so don't add any more to the clearing_paths queue
                 elif not all_shortest_paths:

@@ -88,6 +88,8 @@ class Location:
     # or movement
     def add_piece(self, player: 'Player', piece: 'Piece', trigger_placement_effects: bool = False,
                   trigger_movement_effects: bool = False) -> None:
+        # TODO: Fix
+        # self.game.log(f'{player} adds {piece} to {self}')
         self.piece_map(player).add_piece(piece)
         if piece.location:
             piece.location.remove_pieces_without_side_effects(player, [piece])
@@ -99,6 +101,7 @@ class Location:
 
     def add_pieces(self, player: 'Player', pieces: list['Piece'], trigger_placement_effects: bool = True,
                    trigger_movement_effects: bool = False) -> None:
+        self.game.log(f'{player} adds {pieces} to {self}', logging_faction=player.faction)
         for piece in pieces:
             # Don't trigger movement and placement effects per piece, do it in a batch at the end of placing them
             self.add_piece(player, piece, trigger_placement_effects=False, trigger_movement_effects=False)
@@ -109,12 +112,14 @@ class Location:
 
     # It's assumed the player has already checked that this is a legal move action
     def move_piece(self, player: 'Player', piece: 'Piece', destination: 'Location') -> None:
+        self.game.log(f'{player} moves {piece} from {self} to {destination}', logging_faction=player.faction)
         # Remove piece from this clearing
         self.remove_pieces_without_side_effects(player, [piece])
         destination.add_piece(player, piece, trigger_movement_effects=True)
 
     def move_pieces(self, player: 'Player', pieces: list['Piece'], destination: 'Location') -> None:
         # Remove piece from this clearing
+        self.game.log(f'{player} moves {pieces} from {self} to {destination}', logging_faction=player.faction)
         self.remove_pieces_without_side_effects(player, pieces)
         destination.add_pieces(player, pieces, trigger_movement_effects=True)
 
@@ -129,6 +134,7 @@ class Location:
     # Cogwheel Cult's Acolytes to their supply
     # It's assumed the player has already checked that this is a legal relocation
     def relocate_pieces(self, player: 'Player', pieces: list['Piece'], destination: 'Location') -> None:
+        self.game.log(f'{player} relocates {pieces} from {self} to {destination}', logging_faction=player.faction)
         # Remove the pieces from this clearing
         self.remove_pieces_without_side_effects(player, pieces)
         # If the piece is being
@@ -147,6 +153,7 @@ class Location:
     # Returning pieces to the supply when removed outside of battle: Revolt, Marksman, returning Funds,
     # spending Acolytes, Convert/Sanctify, Price of Failure (Should be overridden to destroy the piece), Bomb
     def remove_pieces(self, player: 'Player', pieces: list['Piece']) -> list['Piece']:
+        self.game.log(f'{player} removes {pieces} from {self}.', logging_faction=player.faction)
         # Remove piece from this location
         removed_pieces = []
         for piece in pieces:

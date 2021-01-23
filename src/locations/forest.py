@@ -3,11 +3,11 @@ from collections import deque
 from typing import TYPE_CHECKING
 
 from constants import Faction
+from locations.clearing import Clearing
 from locations.location import Location
 from sort_utils import sort_clearings_by_priority
 
 if TYPE_CHECKING:
-    from locations.clearing import Clearing
     from pieces.piece import Piece
     from player_resources.player import Player
 
@@ -72,7 +72,11 @@ class Forest(Location):
                 next_path = [c for c in current_path]
                 next_path.append(adjacent_clearing)
                 if adjacent_clearing == destination:
-                    all_shortest_paths.append([c for c in current_path if isinstance(c, Clearing)])
+                    path_ignoring_forest = [c for c in next_path if isinstance(c, Clearing)]
+                    if path_ignoring_forest:
+                        if all_shortest_paths and len(all_shortest_paths[0]) < len(next_path):
+                            continue
+                        all_shortest_paths.append(path_ignoring_forest)
                 # Breadth-first-search: Once we find a path to the destination N clearings away, we know no path to
                 # the destination is shorter than N, so don't add any more to the clearing_paths queue
                 elif not all_shortest_paths:
