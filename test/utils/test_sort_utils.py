@@ -1099,7 +1099,7 @@ class TestSortUtilsClearings(TestCase):
 
         clearings = [clearing1, clearing2, clearing3]
         sorted_clearings = sort_clearings_by_martial_law(clearings, mock_player, descending=True)
-        self.assertEqual(sorted_clearings, [clearing1, clearing2, clearing3])
+        self.assertEqual(sorted_clearings, [clearing3, clearing1, clearing2])
 
     def test_sort_clearings_by_martial_law_ascending(self):
         mock_game = Mock()
@@ -1115,7 +1115,7 @@ class TestSortUtilsClearings(TestCase):
 
         clearings = [clearing1, clearing2, clearing3]
         sorted_clearings = sort_clearings_by_martial_law(clearings, mock_player, descending=False)
-        self.assertEqual(sorted_clearings, [clearing3, clearing1, clearing2])
+        self.assertEqual(sorted_clearings, [clearing1, clearing2, clearing3])
 
     def test_sort_clearings_by_martial_law_does_not_sum_warriors(self):
         mock_game = Mock()
@@ -1131,7 +1131,7 @@ class TestSortUtilsClearings(TestCase):
 
         clearings = [clearing1, clearing2, clearing3]
         sorted_clearings = sort_clearings_by_martial_law(clearings, mock_player, descending=True)
-        self.assertEqual(sorted_clearings, [clearing2, clearing1, clearing3])
+        self.assertEqual(sorted_clearings, [clearing1, clearing3, clearing2])
 
     def test_sort_clearings_by_martial_law_ignores_own_warriors(self):
         mock_game = Mock()
@@ -1147,7 +1147,7 @@ class TestSortUtilsClearings(TestCase):
 
         clearings = [clearing1, clearing2, clearing3]
         sorted_clearings = sort_clearings_by_martial_law(clearings, mock_player, descending=True)
-        self.assertEqual(sorted_clearings, [clearing2, clearing1, clearing3])
+        self.assertEqual(sorted_clearings, [clearing1, clearing3, clearing2])
 
     def test_sort_clearings_by_free_building_slots_descending(self):
         mock_game = Mock()

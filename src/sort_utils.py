@@ -119,8 +119,8 @@ def sort_clearings_by_any_own_buildings(clearings: list['Clearing'], acting_play
 
 def sort_clearings_by_martial_law(clearings: list['Clearing'], acting_player: 'Player',
                                   descending: bool = True) -> list['Clearing']:
-    return sorted(clearings, key=lambda c: any(count >= 3 and player != acting_player for (player, count) in
-                                               c.get_warrior_count_for_all_players().items()),
+    return sorted(clearings, key=lambda c: not any(count >= 3 and player != acting_player for (player, count) in
+                                                   c.get_warrior_count_for_all_players().items()),
                   reverse=descending)
 
 
@@ -159,6 +159,7 @@ def get_defenseless_enemy_buildings_in_clearing(clearing: 'Clearing', acting_pla
 
 
 # By default, all path sorting methods go from 'least X' to 'most X'. Pass descending=True to reverse that
+# The exception is sort_paths_by_destination_player_list, since that has a list you want to ideally follow
 def sort_paths_by_distance(paths: list[list['Clearing']], descending: bool = False) -> list[list['Clearing']]:
     return sorted(paths, key=lambda p: len(p), reverse=descending)
 
@@ -180,14 +181,14 @@ def sort_paths_by_destination_victory_point_priority(paths: list[list['Clearing'
 
 
 def sort_paths_by_destination_player_list(paths: list[list['Clearing']], supplemental_player_list: list['Player'],
-                                          descending: bool = False) -> list[list['Clearing']]:
+                                          descending: bool = True) -> list[list['Clearing']]:
     return sorted(paths, key=lambda p: get_lowest_sorted_player_index_clearing(p[-1], supplemental_player_list),
                   reverse=descending)
 
 
 def get_lowest_sorted_player_index_clearing(clearing: 'Clearing', players: list['Player'],
                                             descending: bool = False) -> int:
-    for idx, player in players:
+    for idx, player in enumerate(players):
         if player in clearing.get_all_players_in_location():
             return idx * (not descending)
     return 100 * (not descending)  # TODO: Implement this better
