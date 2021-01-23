@@ -1,8 +1,13 @@
 from __future__ import annotations
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, Type
 
 from board_map.autumn_board_map import AutumnBoardMap
-from constants import Item
+from bot_resources.bot_factions.automated_alliance.automated_alliance_player import AutomatedAlliancePlayer
+from bot_resources.bot_factions.electric_eyrie.electric_eyrie_player import ElectricEyriePlayer
+from bot_resources.bot_factions.mechanical_marquise_v2.mechanical_marquise_v2_player import MechanicalMarquiseV2Player
+from bot_resources.bot_factions.vagabot.vagabot_characters import VagabotThief
+from bot_resources.bot_factions.vagabot.vagabot_player import VagabotPlayer
+from constants import Item, Faction
 from deck.base_deck import BaseDeck
 from deck.cards.dominance_card import DominanceCard
 from deck.quest_deck import QuestDeck
@@ -26,11 +31,15 @@ class Game:
     turn_order: list['Player']
     turn_player: Optional['Player']
 
-    def __init__(self, players: list['Player'] = None) -> None:
-        if players is None:
-            players = []
+    def __init__(self, players: list['Player'] = None, factions: list['Faction'] = None) -> None:
         self.deck = BaseDeck(self)
         self.quest_deck = QuestDeck()
+
+        if players is None:
+            if factions:
+                players = [self.build_player_by_faction(faction) for faction in factions]
+            else:
+                players = []
         self.players = players
         self.board_map = AutumnBoardMap(self)
         self.item_supply = []
@@ -42,6 +51,16 @@ class Game:
             self.turn_player = None
 
         self.initialize_item_supply()
+
+    def build_player_by_faction(self, faction: Faction) -> 'Player':
+        if faction == Faction.MECHANICAL_MARQUISE_2_0:
+            return MechanicalMarquiseV2Player(self)
+        if faction == Faction.ELECTRIC_EYRIE:
+            return ElectricEyriePlayer(self)
+        if faction == Faction.AUTOMATED_ALLIANCE:
+            return AutomatedAlliancePlayer(self)
+        if faction == Faction.VAGABOT:
+            return VagabotPlayer(self, VagabotThief())
 
     def clearings(self) -> list['Clearing']:
         return self.board_map.clearings

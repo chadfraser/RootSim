@@ -13,6 +13,7 @@ from constants import Faction, Item, Suit
 from deck.quest_deck import QuestCard
 from locations.clearing import Clearing
 from locations.forest import Forest
+from pieces.item_token import ItemToken
 from pieces.warrior import Warrior
 from player_resources.supply import Supply
 from sort_utils import sort_clearings_by_enemy_pieces, \
@@ -24,7 +25,6 @@ if TYPE_CHECKING:
     from deck.cards.card import Card
     from game import Game
     from locations.location import Location
-    from pieces.item_token import ItemToken
     from pieces.piece import Piece
     from player_resources.player import Player
 

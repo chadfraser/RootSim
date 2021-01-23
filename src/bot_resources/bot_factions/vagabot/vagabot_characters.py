@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from locations.clearing import Clearing
 from deck.cards.item_card import ItemCard
@@ -11,8 +11,12 @@ if TYPE_CHECKING:
 
 
 class VagabotCharacter(ABC):
-    def __init__(self, player: 'VagabotPlayer', name: str, starting_item_amount: int = 4) -> None:
-        self.player = player
+    name: str
+    player: Optional['VagabotPlayer']
+    starting_item_amount: int
+
+    def __init__(self, name: str, starting_item_amount: int = 4) -> None:
+        self.player = None
         self.name = name
         self.starting_item_amount = starting_item_amount
 
@@ -20,13 +24,16 @@ class VagabotCharacter(ABC):
     def perform_special_action(self):
         pass
 
+    def set_player(self, player: 'VagabotPlayer') -> None:
+        self.player = player
+
     def can_perform_special_action(self) -> bool:
         return False
 
 
 class VagabotThief(VagabotCharacter):
-    def __init__(self, player: 'VagabotPlayer') -> None:
-        super().__init__(player, 'Thief')
+    def __init__(self) -> None:
+        super().__init__('Thief')
 
     def perform_special_action(self) -> None:
         pawn_location = self.player.piece_stock.get_pawn_location()
@@ -52,8 +59,8 @@ class VagabotThief(VagabotCharacter):
 
 
 class VagabotRanger(VagabotCharacter):
-    def __init__(self, player: 'VagabotPlayer') -> None:
-        super().__init__(player, 'Ranger')
+    def __init__(self) -> None:
+        super().__init__('Ranger')
 
     def perform_special_action(self) -> None:
         self.player.satchel.repair_item()
@@ -63,8 +70,8 @@ class VagabotRanger(VagabotCharacter):
 
 
 class VagabotTinker(VagabotCharacter):
-    def __init__(self, player: 'VagabotPlayer') -> None:
-        super().__init__(player, 'Tinker', starting_item_amount=3)
+    def __init__(self) -> None:
+        super().__init__('Tinker', starting_item_amount=3)
 
     def perform_special_action(self) -> None:
         for card in reversed(self.player.game.deck.discard_pile):

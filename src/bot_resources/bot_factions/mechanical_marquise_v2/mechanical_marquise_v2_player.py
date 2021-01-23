@@ -40,7 +40,7 @@ class MechanicalMarquiseV2Player(Bot):
 
     def __init__(self, game: Game) -> None:
         piece_stock = MechanicalMarquiseV2PieceStock(self)
-        super().__init__(game, Faction.MARQUISE_DE_CAT, piece_stock)
+        super().__init__(game, Faction.MECHANICAL_MARQUISE_2_0, piece_stock)
 
         self.built_building_this_turn = False
 
