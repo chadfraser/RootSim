@@ -9,6 +9,6 @@ if TYPE_CHECKING:
 
 
 class MechanicalMarquiseV2Building(Building):
-    def __init__(self, player: Player, name: str, suit: Suit) -> None:
+    def __init__(self, player: 'Player', name: str, suit: 'Suit') -> None:
         super().__init__(player, name)
         self.suit = suit

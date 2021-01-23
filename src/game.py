@@ -18,15 +18,15 @@ if TYPE_CHECKING:
 
 
 class Game:
-    deck: Deck
-    quest_deck: QuestDeck
-    players: list[Player]
-    board_map: BoardMap
-    item_supply: list[ItemToken]
-    turn_order: list[Player]
-    turn_player: Optional[Player]
+    deck: 'Deck'
+    quest_deck: 'QuestDeck'
+    players: list['Player']
+    board_map: 'BoardMap'
+    item_supply: list['ItemToken']
+    turn_order: list['Player']
+    turn_player: Optional['Player']
 
-    def __init__(self, players: list[Player] = None) -> None:
+    def __init__(self, players: list['Player'] = None) -> None:
         if players is None:
             players = []
         self.deck = BaseDeck(self)
@@ -43,10 +43,10 @@ class Game:
 
         self.initialize_item_supply()
 
-    def clearings(self) -> list[Clearing]:
+    def clearings(self) -> list['Clearing']:
         return self.board_map.clearings
 
-    def get_clearings_of_suit(self, suit: Suit) -> list[Clearing]:
+    def get_clearings_of_suit(self, suit: 'Suit') -> list['Clearing']:
         return self.board_map.get_clearings_of_suit(suit)
 
     def initialize_item_supply(self) -> None:
@@ -63,7 +63,7 @@ class Game:
                 ruin_explorers_playing += 1
         return ruin_explorers_playing
 
-    def get_item_if_available(self, item: Item) -> Optional[ItemToken]:
+    def get_item_if_available(self, item: 'Item') -> Optional['ItemToken']:
         for item_token in self.item_supply:
             if item_token.item == item:
                 return item_token
@@ -72,10 +72,10 @@ class Game:
     def win(self, player: Player) -> None:
         pass
 
-    def draw_card(self) -> Optional[Card]:
+    def draw_card(self) -> Optional['Card']:
         return self.deck.draw_card()
 
-    def discard_card(self, card: Card) -> None:
+    def discard_card(self, card: 'Card') -> None:
         for player in self.players:
             if player.takes_discarded_cards():
                 player.handle_discarded_card(card)
@@ -83,13 +83,13 @@ class Game:
         self.send_card_to_discard_pile(card)
 
     # Skips things like Lost Souls - used to empty the Lost Souls
-    def send_card_to_discard_pile(self, card: Card) -> None:
+    def send_card_to_discard_pile(self, card: 'Card') -> None:
         if isinstance(card, DominanceCard):
             self.deck.dominance_region.append(card)
         else:
             self.deck.discard_pile.append(card)
 
-    def craft_item(self, item: Item, player: Player, score_points: int) -> None:
+    def craft_item(self, item: Item, player: 'Player', score_points: int) -> None:
         item_token = self.get_item_if_available(item)
         if item_token:
             self.item_supply.remove(item_token)

@@ -10,9 +10,9 @@ if TYPE_CHECKING:
 
 
 class Satchel(Supply):
-    undamaged_items: list[ItemToken]
-    damaged_items: list[ItemToken]
-    battle_track: list[ItemToken]
+    undamaged_items: list['ItemToken']
+    damaged_items: list['ItemToken']
+    battle_track: list['ItemToken']
 
     def __init__(self, game: Game, player: Player) -> None:
         super().__init__(game, player)
@@ -20,7 +20,7 @@ class Satchel(Supply):
         self.damaged_items = []
         self.battle_track = []
 
-    def get_exhausted_undamaged_items(self, item_count: int = 1) -> list[ItemToken]:
+    def get_exhausted_undamaged_items(self, item_count: int = 1) -> list['ItemToken']:
         items = []
         for item in self.undamaged_items:
             if item.is_exhausted:
@@ -29,7 +29,7 @@ class Satchel(Supply):
                     break
         return items
 
-    def get_unexhausted_undamaged_items(self, item_count: int = 1) -> list[ItemToken]:
+    def get_unexhausted_undamaged_items(self, item_count: int = 1) -> list['ItemToken']:
         items = []
         for item in self.undamaged_items:
             if not item.is_exhausted:
@@ -38,7 +38,7 @@ class Satchel(Supply):
                     break
         return items
 
-    def get_exhausted_damaged_items(self, item_count: int = 1) -> list[ItemToken]:
+    def get_exhausted_damaged_items(self, item_count: int = 1) -> list['ItemToken']:
         items = []
         for item in self.damaged_items:
             if item.is_exhausted:
@@ -47,7 +47,7 @@ class Satchel(Supply):
                     break
         return items
 
-    def get_unexhausted_damaged_items(self, item_count: int = 1) -> list[ItemToken]:
+    def get_unexhausted_damaged_items(self, item_count: int = 1) -> list['ItemToken']:
         items = []
         for item in self.damaged_items:
             if not item.is_exhausted:
@@ -64,7 +64,7 @@ class Satchel(Supply):
             item.is_exhausted = True
         return True
 
-    def add_item(self, item: ItemToken) -> None:
+    def add_item(self, item: 'ItemToken') -> None:
         item.is_exhausted = False
         if self.get_total_item_count() in [5, 8, 11]:
             self.battle_track.append(item)
@@ -88,7 +88,7 @@ class Satchel(Supply):
         self.damaged_items.remove(item_to_repair[0])
         self.undamaged_items.append(item_to_repair[0])
 
-    def damage_specific_item(self, item: ItemToken) -> None:
+    def damage_specific_item(self, item: 'ItemToken') -> None:
         if item not in self.undamaged_items:
             return
         self.undamaged_items.remove(item)

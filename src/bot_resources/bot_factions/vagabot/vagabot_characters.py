@@ -1,14 +1,17 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 
-from bot_resources.bot_factions.vagabot.vagabot_player import VagabotPlayer
 from locations.clearing import Clearing
 from deck.cards.item_card import ItemCard
 from sort_utils import sort_players_by_victory_points, sort_players_by_setup_order, sort_players_by_pieces_in_clearing
 
+if TYPE_CHECKING:
+    from bot_resources.bot_factions.vagabot.vagabot_player import VagabotPlayer
+
 
 class VagabotCharacter(ABC):
-    def __init__(self, player: VagabotPlayer, name: str, starting_item_amount: int = 4) -> None:
+    def __init__(self, player: 'VagabotPlayer', name: str, starting_item_amount: int = 4) -> None:
         self.player = player
         self.name = name
         self.starting_item_amount = starting_item_amount
@@ -22,7 +25,7 @@ class VagabotCharacter(ABC):
 
 
 class VagabotThief(VagabotCharacter):
-    def __init__(self, player: VagabotPlayer) -> None:
+    def __init__(self, player: 'VagabotPlayer') -> None:
         super().__init__(player, 'Thief')
 
     def perform_special_action(self) -> None:
@@ -49,7 +52,7 @@ class VagabotThief(VagabotCharacter):
 
 
 class VagabotRanger(VagabotCharacter):
-    def __init__(self, player: VagabotPlayer) -> None:
+    def __init__(self, player: 'VagabotPlayer') -> None:
         super().__init__(player, 'Ranger')
 
     def perform_special_action(self) -> None:
@@ -60,7 +63,7 @@ class VagabotRanger(VagabotCharacter):
 
 
 class VagabotTinker(VagabotCharacter):
-    def __init__(self, player: VagabotPlayer) -> None:
+    def __init__(self, player: 'VagabotPlayer') -> None:
         super().__init__(player, 'Tinker', starting_item_amount=3)
 
     def perform_special_action(self) -> None:

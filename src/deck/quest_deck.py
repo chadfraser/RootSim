@@ -6,7 +6,7 @@ from constants import Suit
 
 
 class QuestDeck:
-    cards: list[QuestCard]
+    cards: list['QuestCard']
 
     def __init__(self) -> None:
         self.cards = []
@@ -15,7 +15,7 @@ class QuestDeck:
                 self.cards.append(QuestCard(suit))
         random.shuffle(self.cards)
 
-    def draw_quest_card(self) -> Optional[QuestCard]:
+    def draw_quest_card(self) -> Optional['QuestCard']:
         if not self.cards:
             return
         return self.cards.pop()
@@ -24,5 +24,5 @@ class QuestDeck:
 class QuestCard:
     suit: Suit
 
-    def __init__(self, suit: Suit) -> None:
+    def __init__(self, suit: 'Suit') -> None:
         self.suit = suit

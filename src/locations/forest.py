@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 
 
 class Forest(Location):
-    adjacent_clearings: set[Clearing]
-    adjacent_forests: set[Forest]
+    adjacent_clearings: set['Clearing']
+    adjacent_forests: set['Forest']
 
     def __init__(self, game) -> None:
         super().__init__(game)
@@ -22,11 +22,11 @@ class Forest(Location):
         self.adjacent_forests = set()
         self.name = ''
 
-    def mark_forest_as_adjacent_to_self(self, forest: Forest) -> None:
+    def mark_forest_as_adjacent_to_self(self, forest: 'Forest') -> None:
         self.adjacent_forests.add(forest)
         forest.adjacent_forests.add(self)
 
-    def mark_clearing_as_adjacent_to_self(self, clearing: Clearing) -> None:
+    def mark_clearing_as_adjacent_to_self(self, clearing: 'Clearing') -> None:
         self.adjacent_clearings.add(clearing)
         clearing.adjacent_forests.add(self)
 
@@ -35,7 +35,7 @@ class Forest(Location):
         self.name = '_'.join(sorted_adjacent_clearings)  # TODO: Fix Type Hinting issues
 
     # Only VV can move into a forest
-    def can_move_piece_into(self, player: Player, piece: Piece) -> bool:
+    def can_move_piece_into(self, player: 'Player', piece: 'Piece') -> bool:
         return player.faction == Faction.VAGABOT
 
     ###################################
@@ -45,9 +45,9 @@ class Forest(Location):
     ###################################
 
     # For Vagabot movement primarily
-    def find_shortest_legal_paths_to_destination_clearing(self, player: Player, moving_piece: Piece,
-                                                          destination: Clearing,
-                                                          ignore_move: bool = False) -> list[list[Clearing]]:
+    def find_shortest_legal_paths_to_destination_clearing(self, player: 'Player', moving_piece: 'Piece',
+                                                          destination: 'Clearing',
+                                                          ignore_move: bool = False) -> list[list['Clearing']]:
         if not destination.can_move_piece_into(player, moving_piece):
             return []
 

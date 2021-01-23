@@ -10,10 +10,10 @@ if TYPE_CHECKING:
 
 
 class Decree:
-    viziers: list[LoyalVizier]
-    columns: dict[Suit, list[Card]]
+    viziers: list['LoyalVizier']
+    columns: dict['Suit', list['Card']]
 
-    def __init__(self, player: ElectricEyriePlayer) -> None:
+    def __init__(self, player: 'ElectricEyriePlayer') -> None:
         self.player = player
         self.viziers = [LoyalVizier(), LoyalVizier()]
         self.columns = {
@@ -23,16 +23,16 @@ class Decree:
             Suit.BIRD: [vizier for vizier in self.viziers]
         }
 
-    def add_to_decree(self, card: Card) -> None:
+    def add_to_decree(self, card: 'Card') -> None:
         self.columns[card.suit].append(card)
 
-    def get_count_of_suited_cards_in_decree(self, suit: Suit) -> int:
+    def get_count_of_suited_cards_in_decree(self, suit: 'Suit') -> int:
         return len(self.columns[suit])
 
     def get_count_of_bird_cards_in_decree(self) -> int:
         return self.get_count_of_suited_cards_in_decree(Suit.BIRD)
 
-    def column_has_most_cards(self, suit: Suit) -> bool:
+    def column_has_most_cards(self, suit: 'Suit') -> bool:
         suited_card_count = self.get_count_of_suited_cards_in_decree(suit)
         for column_suit, cards in self.columns.items():
             if len(cards) > suited_card_count:

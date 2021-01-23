@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 class BaseDeck(Deck):
-    def __init__(self, game: Game) -> None:
+    def __init__(self, game: 'Game') -> None:
         super().__init__(game)
 
     def initialize_cards(self) -> None:

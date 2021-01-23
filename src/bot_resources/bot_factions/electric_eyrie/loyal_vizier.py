@@ -12,5 +12,5 @@ class LoyalVizier(Card):
     def __init__(self) -> None:
         super().__init__('Loyal Vizier', Suit.BIRD)
 
-    def can_be_crafted(self, player: Player) -> bool:
+    def can_be_crafted(self, player: 'Player') -> bool:
         return False

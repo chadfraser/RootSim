@@ -8,5 +8,5 @@ if TYPE_CHECKING:
 
 
 class Warrior(Piece):
-    def __init__(self, player: Player) -> None:
+    def __init__(self, player: 'Player') -> None:
         super().__init__(player, 'Warrior')

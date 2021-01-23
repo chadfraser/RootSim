@@ -2,7 +2,7 @@ from __future__ import annotations
 import random
 from typing import TYPE_CHECKING
 
-from battle_utils import RollResult, DamageResult
+from battle_utils import DamageResult, RollResult
 from bot_resources.bot import Bot
 from bot_resources.bot_factions.automated_alliance.automated_alliance_piece_stock import AutomatedAlliancePieceStock
 from bot_resources.bot_factions.automated_alliance.automated_alliance_trait import TRAIT_INFORMANTS, \
@@ -12,8 +12,8 @@ from bot_resources.bot_factions.automated_alliance.sympathy import Sympathy
 from constants import Faction, Suit
 from locations.clearing import Clearing
 from player_resources.supply import Supply
-from sort_utils import sort_clearings_by_enemy_pieces, sort_clearings_by_martial_law, sort_clearings_by_priority, \
-    sort_clearings_by_matching_suit
+from sort_utils import sort_clearings_by_enemy_pieces, sort_clearings_by_martial_law, sort_clearings_by_matching_suit, \
+    sort_clearings_by_priority
 
 if TYPE_CHECKING:
     from deck.cards.card import Card
@@ -26,18 +26,18 @@ if TYPE_CHECKING:
 
 class AutomatedAlliancePlayer(Bot):
     victory_points: int
-    game: Game
-    faction: Faction
-    piece_stock: AutomatedAlliancePieceStock
+    game: 'Game'
+    faction: 'Faction'
+    piece_stock: 'AutomatedAlliancePieceStock'
     supply: Supply
-    revealed_cards: list[Card]
-    crafted_items: list[ItemToken]
+    revealed_cards: list['Card']
+    crafted_items: list['ItemToken']
     has_revolted: bool
-    players_who_have_removed_sympathy_since_last_turn: set[Player]
+    players_who_have_removed_sympathy_since_last_turn: set['Player']
 
     SYMPATHY_SCORES = [0, 1, 1, 1, 2, 2, 3, 4, 4, 4]
 
-    def __init__(self, game: Game) -> None:
+    def __init__(self, game: 'Game') -> None:
         piece_stock = AutomatedAlliancePieceStock(self)
         super().__init__(game, Faction.AUTOMATED_ALLIANCE, piece_stock)
 
@@ -78,9 +78,13 @@ class AutomatedAlliancePlayer(Bot):
     def between_turns(self) -> None:
         self.players_who_have_removed_sympathy_since_last_turn = set()
 
-########################################################################################################################
+    ##################
+    #                #
+    # Revolt methods #
+    #                #
+    ##################
 
-    def get_clearings_to_revolt_in(self) -> list[Clearing]:
+    def get_clearings_to_revolt_in(self) -> list['Clearing']:
         valid_revolt_clearings = []
         for base in self.piece_stock.get_bases():
             # Skip bases that don't match the order card
@@ -120,6 +124,12 @@ class AutomatedAlliancePlayer(Bot):
         target_clearing.add_piece(self, base_to_place)
         self.has_revolted = True
 
+    ####################
+    #                  #
+    # Sympathy methods #
+    #                  #
+    ####################
+
     def public_pity(self) -> None:
         placed_sympathy = [token for token in self.piece_stock.get_sympathy() if isinstance(token.location, Clearing)]
         if len(placed_sympathy) <= 4:
@@ -157,7 +167,7 @@ class AutomatedAlliancePlayer(Bot):
     # If no sympathy tokens are on the map, sympathy_adjacent_clearings is all clearings
     # Otherwise, it's all clearings that are adjacent to a clearing with a sympathy token
     # Spread using the tie-breaker: Avoid martial law -> respect order suit -> high priority
-    def spread_sympathy_without_bird_order_card(self, sympathy_adjacent_clearings: list[Clearing],
+    def spread_sympathy_without_bird_order_card(self, sympathy_adjacent_clearings: list['Clearing'],
                                                 score: bool = True) -> None:
         unplaced_sympathy = [token for token in self.get_unplaced_tokens()]
         unplaced_sympathy_count = len(unplaced_sympathy)
@@ -188,6 +198,24 @@ class AutomatedAlliancePlayer(Bot):
             else:
                 self.score_bonus_for_unplaced_sympathy(score)
 
+    def score_bonus_for_unplaced_sympathy(self, score: bool) -> None:
+        if score:
+            self.add_victory_points(5)  # 5-point bonus if you could not spread sympathy
+
+    def score_for_sympathy(self) -> None:
+        placed_sympathy = [token for token in self.piece_stock.get_sympathy() if isinstance(token.location, Clearing)]
+        score_for_sympathy = self.SYMPATHY_SCORES[len(placed_sympathy) - 1]
+        self.add_victory_points(score_for_sympathy)
+
+    def wildfire(self):
+        self.spread_sympathy(score=False)
+
+    ###################
+    #                 #
+    # Warrior methods #
+    #                 #
+    ###################
+
     def recruit_step(self) -> None:
         base_clearings = [base.location for base in self.piece_stock.get_bases() if
                           isinstance(base.location, Clearing)]
@@ -198,15 +226,6 @@ class AutomatedAlliancePlayer(Bot):
             # A bit oddly written, but this takes care of removing a snare if one prevents the warrior from being
             # recruited at the base
             self.place_pieces_in_one_of_clearings(self.get_unplaced_warriors()[:1], [base_clearing])
-        # base_clearings = [base.location for base in self.piece_stock.get_bases() if
-        #                   isinstance(base.location, Clearing) and
-        #                   base.location.can_place_piece(self, warriors_available_to_recruit[0])]
-        # sorted_base_clearings = sort_clearings_by_priority(base_clearings)
-        # if len(warriors_available_to_recruit) < len(sorted_base_clearings):
-        #     sorted_base_clearings = sorted_base_clearings[:len(warriors_available_to_recruit)]
-        #
-        # for idx, clearing in enumerate(sorted_base_clearings):
-        #     clearing.add_piece(self, warriors_available_to_recruit[idx])
 
     def organize_step(self) -> None:
         base_clearings = [base.location for base in self.piece_stock.get_bases() if
@@ -220,12 +239,13 @@ class AutomatedAlliancePlayer(Bot):
     def get_organizing_amount(self) -> int:
         return 2 + self.difficulty.value
 
-    def wildfire(self):
-        self.spread_sympathy(score=False)
+    ##################
+    #                #
+    # Battle methods #
+    #                #
+    ##################
 
-########################################################################################################################
-
-    def suffer_damage(self, clearing: Clearing, hits: int, opponent: Player, is_attacker: bool) -> DamageResult:
+    def suffer_damage(self, clearing: 'Clearing', hits: int, opponent: 'Player', is_attacker: bool) -> 'DamageResult':
         removed_pieces = []
         points_awarded = 0
         if hits:
@@ -258,7 +278,7 @@ class AutomatedAlliancePlayer(Bot):
         clearing.remove_pieces(self, removed_pieces)
         return DamageResult(removed_pieces=removed_pieces, points_awarded=points_awarded)
 
-    def give_score_for_removed_pieces_not_in_battle(self, other_player: Player, removed_pieces: list[Piece]) -> int:
+    def give_score_for_removed_pieces_not_in_battle(self, other_player: 'Player', removed_pieces: list['Piece']) -> int:
         victory_points_gained = 0
         for piece in removed_pieces:
             if isinstance(piece, Sympathy):
@@ -273,7 +293,7 @@ class AutomatedAlliancePlayer(Bot):
                 victory_points_gained += piece.get_score_for_removal()
         return victory_points_gained
 
-    def allocate_rolls_as_defender(self, rolls: tuple[int, int]) -> RollResult:
+    def allocate_rolls_as_defender(self, rolls: tuple[int, int]) -> 'RollResult':
         if self.has_trait(TRAIT_VETERANS):
             # Give both players the high roll
             if rolls[0] < rolls[1]:
@@ -282,25 +302,7 @@ class AutomatedAlliancePlayer(Bot):
         else:
             return super().allocate_rolls_as_defender(rolls)
 
-    # CRACKDOWN: When destroying a base, lose all sympathy of that suit
-    def move_removed_pieces_into_supply(self, pieces: list[Piece], origin_location: Location) -> None:
-        for piece in pieces:
-            if isinstance(piece, Base):
-                for sympathy in self.piece_stock.get_sympathy():
-                    if isinstance(sympathy.location, Clearing) and sympathy.location.suit == piece.suit:
-                        sympathy.location.remove_pieces(self, [sympathy])
-        self.supply.add_pieces(self, pieces)
-
-    def score_for_sympathy(self) -> None:
-        placed_sympathy = [token for token in self.piece_stock.get_sympathy() if isinstance(token.location, Clearing)]
-        score_for_sympathy = self.SYMPATHY_SCORES[len(placed_sympathy) - 1]
-        self.add_victory_points(score_for_sympathy)
-
-    def score_bonus_for_unplaced_sympathy(self, score: bool) -> None:
-        if score:
-            self.add_victory_points(5)  # 5-point bonus if you could not spread sympathy
-
-    def get_bonus_hits(self, clearing: Clearing, opponent: Player, is_attacker: bool = True) -> int:
+    def get_bonus_hits(self, clearing: 'Clearing', opponent: 'Player', is_attacker: bool = True) -> int:
         bonus_hits = 0
         # Automated Ambush
         if clearing.get_warrior_count_for_player(self) > 0:
@@ -308,3 +310,12 @@ class AutomatedAlliancePlayer(Bot):
         elif self.has_trait(TRAIT_INFORMANTS) and clearing.get_token_count_for_player(self) > 0:
             bonus_hits += 1
         return bonus_hits
+
+    # CRACKDOWN: When destroying a base, lose all sympathy of that suit
+    def move_removed_pieces_into_supply(self, pieces: list['Piece'], origin_location: 'Location') -> None:
+        for piece in pieces:
+            if isinstance(piece, Base):
+                for sympathy in self.piece_stock.get_sympathy():
+                    if isinstance(sympathy.location, Clearing) and sympathy.location.suit == piece.suit:
+                        sympathy.location.remove_pieces(self, [sympathy])
+        self.supply.add_pieces(self, pieces)

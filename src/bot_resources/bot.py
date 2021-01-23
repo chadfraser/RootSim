@@ -21,12 +21,12 @@ if TYPE_CHECKING:
 
 
 class Bot(Player, ABC):
-    difficulty: BotDifficulty
-    order_card: Optional[Card]
-    traits: list[Trait]
+    difficulty: 'BotDifficulty'
+    order_card: Optional['Card']
+    traits: list['Trait']
 
-    def __init__(self, game: Game, faction: Faction, piece_stock: PieceStock = None,
-                 difficulty: BotDifficulty = BotDifficulty.BEGINNER, traits: list[Trait] = None) -> None:
+    def __init__(self, game: 'Game', faction: 'Faction', piece_stock: 'PieceStock' = None,
+                 difficulty: 'BotDifficulty' = BotDifficulty.BEGINNER, traits: list['Trait'] = None) -> None:
         if traits is None:
             traits = []
 
@@ -35,7 +35,7 @@ class Bot(Player, ABC):
         self.order_card = None
         self.traits = traits
 
-    def get_corner_homeland(self) -> Clearing:
+    def get_corner_homeland(self) -> 'Clearing':
         corner_clearings = self.game.board_map.get_corner_clearings()
         # The only corner clearings that start with buildings or tokens on them are homeland corner clearings
         corner_homelands = [clearing for clearing in corner_clearings if clearing.get_total_token_count() > 0 or
@@ -53,18 +53,18 @@ class Bot(Player, ABC):
         if isinstance(self.order_card, ItemCard) and self.order_card.can_be_crafted(self):
             self.game.craft_item(self.order_card.item, self, 1)
 
-    def get_ruled_ordered_clearings(self) -> list[Clearing]:
+    def get_ruled_ordered_clearings(self) -> list['Clearing']:
         return self.get_ruled_suited_clearings(self.order_card.suit)
 
-    def has_trait(self, trait: Trait) -> bool:
+    def has_trait(self, trait: 'Trait') -> bool:
         return trait in self.traits
 
-    def add_card_to_hand(self, card: Optional[Card]) -> None:
+    def add_card_to_hand(self, card: Optional['Card']) -> None:
         self.add_victory_points(1)
         if card:
             self.game.discard_card(card)
 
-    def place_pieces_in_one_of_clearings(self, pieces_to_place: list[Piece], sorted_clearings: list[Clearing],
+    def place_pieces_in_one_of_clearings(self, pieces_to_place: list['Piece'], sorted_clearings: list['Clearing'],
                                          ignore_building_slots: bool = False) -> None:
         if not pieces_to_place:
             return
@@ -78,7 +78,7 @@ class Bot(Player, ABC):
             return
         self.supply.relocate_pieces(self, pieces_to_place, valid_placing_clearings[0])
 
-    def place_pieces_spread_among_clearings(self, pieces_to_place: list[Piece], sorted_clearings: list[Clearing],
+    def place_pieces_spread_among_clearings(self, pieces_to_place: list['Piece'], sorted_clearings: list['Clearing'],
                                             ignore_building_slots: bool = False) -> None:
         if not pieces_to_place:
             return
@@ -104,7 +104,7 @@ class Bot(Player, ABC):
 
     # Checks all sorted clearings in order, and finds the first one that has a snare and would otherwise allow the
     # piece to be placed. Removes the snare from that clearing
-    def remove_snare_if_it_prevents_placing(self, pieces_to_place: list[Piece], sorted_clearings: list[Clearing],
+    def remove_snare_if_it_prevents_placing(self, pieces_to_place: list['Piece'], sorted_clearings: list['Clearing'],
                                             ignore_building_slots: bool = False) -> bool:
         for clearing in sorted_clearings:
             pieces_in_clearing = clearing.get_pieces()
@@ -127,8 +127,8 @@ class Bot(Player, ABC):
     # otherwise. If so, removes the snare from the origin clearing
     # Currently relies on the fact that only the Snare restricts movement out of a clearing, but this can be adjusted
     # if need be in the future
-    def remove_snare_if_it_prevents_movement(self, pieces_to_move: list[Piece], origin_clearing: Clearing,
-                                             sorted_destinations: list[Location],
+    def remove_snare_if_it_prevents_movement(self, pieces_to_move: list['Piece'], origin_clearing: 'Clearing',
+                                             sorted_destinations: list['Location'],
                                              requires_rule: bool = True) -> bool:
         # Check if the origin clearing has any snares - if not, return
         # ...

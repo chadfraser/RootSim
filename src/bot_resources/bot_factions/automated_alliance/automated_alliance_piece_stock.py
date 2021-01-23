@@ -12,15 +12,15 @@ if TYPE_CHECKING:
 
 
 class AutomatedAlliancePieceStock(PieceStock):
-    def __init__(self, player: AutomatedAlliancePlayer) -> None:
+    def __init__(self, player: 'AutomatedAlliancePlayer') -> None:
         warriors = [Warrior(player) for _ in range(10)]
         buildings = [Base(player, suit) for suit in [Suit.FOX, Suit.RABBIT, Suit.MOUSE]]
         tokens = [Sympathy(player) for _ in range(10)]
 
         super().__init__(player, warriors, buildings, tokens)
 
-    def get_bases(self) -> list[Base]:
+    def get_bases(self) -> list['Base']:
         return [building for building in self.buildings if isinstance(building, Base)]
 
-    def get_sympathy(self) -> list[Sympathy]:
+    def get_sympathy(self) -> list['Sympathy']:
         return [token for token in self.tokens if isinstance(token, Sympathy)]

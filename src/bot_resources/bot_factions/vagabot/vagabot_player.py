@@ -31,19 +31,19 @@ if TYPE_CHECKING:
 
 class VagabotPlayer(Bot):
     victory_points: int
-    game: Game
-    faction: Faction
-    piece_stock: VagabotPieceStock
-    supply: Supply
-    revealed_cards: list[Card]
-    crafted_items: list[ItemToken]
-    character: VagabotCharacter
-    quest: Optional[QuestCard]
-    satchel: Satchel
+    game: 'Game'
+    faction: 'Faction'
+    piece_stock: 'VagabotPieceStock'
+    supply: 'Supply'
+    revealed_cards: list['Card']
+    crafted_items: list['ItemToken']
+    character: 'VagabotCharacter'
+    quest: Optional['QuestCard']
+    satchel: 'Satchel'
     has_slipped: bool
     has_battled: bool
 
-    def __init__(self, game: Game, character: VagabotCharacter) -> None:
+    def __init__(self, game: 'Game', character: 'VagabotCharacter') -> None:
         piece_stock = VagabotPieceStock(self)
         super().__init__(game, Faction.VAGABOT, piece_stock)
 
@@ -69,7 +69,11 @@ class VagabotPlayer(Bot):
         random.shuffle(forests_with_maximum_adjacent_clearings)
         forests_with_maximum_adjacent_clearings[0].add_piece(self, self.get_pawn())
 
-########################################################################################################################
+    ######################
+    #                    #
+    # Turn order methods #
+    #                    #
+    ######################
 
     def birdsong(self) -> None:
         self.has_slipped = False
@@ -107,15 +111,19 @@ class VagabotPlayer(Bot):
         self.game.discard_card(self.order_card)
         self.order_card = None
 
-########################################################################################################################
+    ########################
+    #                      #
+    # Pawn utility methods #
+    #                      #
+    ########################
 
-    def get_pawn_location(self) -> Location:
+    def get_pawn_location(self) -> 'Location':
         return self.piece_stock.get_pawn_location()
 
     def get_pawn(self) -> Piece:
         return self.piece_stock.get_pawn()
 
-    def move_pawn(self, destination: Location, exhaust_item: bool = True) -> None:
+    def move_pawn(self, destination: 'Location', exhaust_item: bool = True) -> None:
         current_location = self.get_pawn_location()
         # Don't try to move if you're already at the destination, or if you need to exhaust an item to move but have
         # no unexhausted undamaged items
@@ -128,7 +136,7 @@ class VagabotPlayer(Bot):
             self.remove_snare_if_it_prevents_movement([self.get_pawn()], cast(Clearing, current_location),
                                                       [destination], requires_rule=False)
 
-    def move_along_path(self, path: list[Clearing]) -> None:
+    def move_along_path(self, path: list['Clearing']) -> None:
         while path and self.satchel.get_unexhausted_undamaged_items():
             next_step = path[0]
             self.move_pawn(next_step)
@@ -148,7 +156,7 @@ class VagabotPlayer(Bot):
         self.move_pawn(destinations[0])  # TODO: This currently runs with SLIP-4, but SLIP-1 or SLIP-2 are more likely
         self.has_slipped = True
 
-    def travel_to_target_clearings(self, target_clearings: list[Clearing],
+    def travel_to_target_clearings(self, target_clearings: list['Clearing'],
                                    sorting_methods: list[Callable] = None, arguments: list[list[Any]] = None) -> None:
         # Default sorting order for traveling to one of the target clearings:
         # Path length -> destination clearing priority -> lexicographic clearing priority
@@ -180,6 +188,12 @@ class VagabotPlayer(Bot):
         # sorted_potential_movement_routes = sort_paths_by_distance(sorted_potential_movement_routes)
         # self.move_along_path(sorted_potential_movement_routes[0])
         self.move_along_path(potential_movement_routes[0])
+
+    #######################
+    #                     #
+    # Turn action methods #
+    #                     #
+    #######################
 
     def explore_step(self) -> None:
         ruin_clearings = [clearing for clearing in self.game.clearings() if clearing.ruin]
@@ -327,6 +341,12 @@ class VagabotPlayer(Bot):
         if potential_targets:
             self.battle(clearing, potential_targets[0])
 
+    ##########################
+    #                        #
+    # Evening action methods #
+    #                        #
+    ##########################
+
     def adventurer(self) -> None:
         current_quest_card = None
         # Repeat the quest action until the quest card hasn't changed - when that happens, we know we can't complete a
@@ -354,7 +374,11 @@ class VagabotPlayer(Bot):
                 self.satchel.repair_item()
             self.satchel.repair_item()
 
-########################################################################################################################
+    ##################
+    #                #
+    # Battle methods #
+    #                #
+    ##################
 
     def battle(self, clearing: Clearing, defender: Player) -> None:
         if self.has_trait(TRAIT_MARKSMAN):
@@ -422,6 +446,8 @@ class VagabotPlayer(Bot):
 
     def is_defenseless(self, clearing: Clearing) -> bool:
         return False
+
+########################################################################################################################
 
     def get_item(self, item_token: ItemToken) -> None:
         self.satchel.add_item(item_token)
