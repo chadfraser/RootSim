@@ -55,7 +55,7 @@ class Player(ABC):
         self.evening()
 
     # TODO: Remove
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self.faction.value)
 
     @abstractmethod
@@ -78,7 +78,7 @@ class Player(ABC):
         if self.victory_points >= 30:
             self.game.win(self)
         if victory_points > 0:
-            self.game.log(f'{self} has {self.victory_points} VP.', logging_faction=self.faction)
+            self.game.log(f'{self} now has total {self.victory_points} VP.', logging_faction=self.faction)
 
     def get_unplaced_pieces(self) -> list['Piece']:
         return self.supply.get_pieces()
@@ -139,6 +139,7 @@ class Player(ABC):
     ##################
 
     def battle(self, clearing: 'Clearing', defender: 'Player') -> None:
+        self.game.log(f'{self} battles {defender} in {clearing}.', logging_faction=self.faction)
         random_rolls = (random.randint(0, 3), random.randint(0, 3))
         self.game.log(f'{self} rolls {random_rolls[0]}, {random_rolls[1]}.', logging_faction=self.faction)
         # Defender allocates the rolls - high roll to attacker, low roll to defender, except in the case of Veterans

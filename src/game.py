@@ -3,6 +3,7 @@ import logging
 from typing import Optional, TYPE_CHECKING
 
 from board_map.autumn_board_map import AutumnBoardMap
+from bot_resources.bot_constants import BotDifficulty
 from bot_resources.bot_factions.automated_alliance.automated_alliance_player import AutomatedAlliancePlayer
 from bot_resources.bot_factions.electric_eyrie.electric_eyrie_player import ElectricEyriePlayer
 from bot_resources.bot_factions.mechanical_marquise_v2.mechanical_marquise_v2_player import MechanicalMarquiseV2Player
@@ -37,7 +38,7 @@ class Game:
 
     def __init__(self, players: list['Player'] = None, factions: list['Faction'] = None) -> None:
         self.logger = logging.getLogger(__name__)
-        logging.basicConfig(level=logging.INFO)
+        # logging.basicConfig(level=logging.INFO)
 
         self.deck = BaseDeck(self)
         self.quest_deck = QuestDeck()
@@ -64,7 +65,7 @@ class Game:
             player.setup()
 
         while not self.winner:
-            self.log(f'--{self.turn_player}--', logging_faction=self.turn_player.faction)
+            self.log(f'--{self.turn_player}--')
             self.turn_player.take_turn()
             next_turn_player_index = self.turn_order.index(self.turn_player) + 1
             next_turn_player_index %= len(self.turn_order)
@@ -74,13 +75,13 @@ class Game:
 
     def build_player_by_faction(self, faction: Faction) -> 'Player':
         if faction == Faction.MECHANICAL_MARQUISE_2_0:
-            return MechanicalMarquiseV2Player(self)
+            return MechanicalMarquiseV2Player(self, BotDifficulty.MASTER)
         if faction == Faction.ELECTRIC_EYRIE:
-            return ElectricEyriePlayer(self)
+            return ElectricEyriePlayer(self, BotDifficulty.MASTER)
         if faction == Faction.AUTOMATED_ALLIANCE:
-            return AutomatedAlliancePlayer(self)
+            return AutomatedAlliancePlayer(self, BotDifficulty.MASTER)
         if faction == Faction.VAGABOT:
-            return VagabotPlayer(self, VagabotThief())
+            return VagabotPlayer(self, VagabotThief(), BotDifficulty.MASTER)
 
     def clearings(self) -> list['Clearing']:
         return self.board_map.clearings
@@ -134,10 +135,10 @@ class Game:
     def craft_item(self, item: 'Item', player: 'Player', score_points: int) -> None:
         item_token = self.get_item_if_available(item)
         if item_token:
+            self.log(f'{player} crafts {item} for {score_points} VP.', logging_faction=player.faction)
             self.item_supply.remove(item_token)
             player.get_item(item_token)
             player.add_victory_points(score_points)
-            self.log(f'{player} crafts {item} for {score_points} VP.', logging_faction=player.faction)
 
     def log(self, message: str, log_level: int = logging.INFO, logging_faction: Faction = None) -> None:
         if logging_faction == Faction.MECHANICAL_MARQUISE_2_0:
@@ -148,11 +149,4 @@ class Game:
             message = f'\u001b[32m{message}\u001b[0m'
         elif logging_faction == Faction.VAGABOT:
             message = f'\u001b[30m{message}\u001b[0m'
-        else:
-            message = f'\u001b[37m{message}\u001b[0m'
         self.logger.log(log_level, message)
-
-
-# TODO: Remove after testing
-gg = Game(factions=[Faction.MECHANICAL_MARQUISE_2_0, Faction.ELECTRIC_EYRIE, Faction.AUTOMATED_ALLIANCE,
-                    Faction.VAGABOT])

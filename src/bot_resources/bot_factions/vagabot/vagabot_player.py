@@ -4,11 +4,13 @@ from typing import TYPE_CHECKING, Optional, cast, Callable, Any
 
 from battle_utils import DamageResult
 from bot_resources.bot import Bot
+from bot_resources.bot_constants import BotDifficulty
 from bot_resources.bot_factions.vagabot.satchel import Satchel
 from bot_resources.bot_factions.vagabot.vagabot_piece_stock import VagabotPieceStock
 from bot_resources.bot_factions.vagabot.vagabot_trait import TRAIT_ADVENTURER, TRAIT_BERSERKER, TRAIT_HELPER, \
     TRAIT_MARKSMAN
 from bot_resources.bot_factions.vagabot.vagabot_characters import VagabotCharacter
+from bot_resources.trait import Trait
 from constants import Faction, Item, Suit
 from deck.quest_deck import QuestCard
 from locations.clearing import Clearing
@@ -43,9 +45,10 @@ class VagabotPlayer(Bot):
     has_slipped: bool
     has_battled: bool
 
-    def __init__(self, game: 'Game', character: 'VagabotCharacter') -> None:
+    def __init__(self, game: 'Game', character: 'VagabotCharacter', difficulty: 'BotDifficulty' = None,
+                 traits: list['Trait'] = None) -> None:
         piece_stock = VagabotPieceStock(self)
-        super().__init__(game, Faction.VAGABOT, piece_stock)
+        super().__init__(game, Faction.VAGABOT, piece_stock, difficulty=difficulty, traits=traits)
 
         self.has_slipped = False
         self.has_battled = False
@@ -111,6 +114,11 @@ class VagabotPlayer(Bot):
         self.repair_step()
         self.game.discard_card(self.order_card)
         self.order_card = None
+        self.game.log(f'{self} now has '
+                      f'{len(self.satchel.get_unexhausted_undamaged_items(-1))}/{len(self.satchel.get_exhausted_undamaged_items(-1))}'
+                      f' undamaged items and '
+                      f'{len(self.satchel.get_unexhausted_damaged_items(-1))}/{len(self.satchel.get_exhausted_damaged_items(-1))}'
+                      f' damaged items.', logging_faction=self.faction)
 
     ########################
     #                      #
@@ -151,6 +159,7 @@ class VagabotPlayer(Bot):
             # if self.get_pawn_location() == next_step:
             #     path.pop(0)
 
+    # TODO: Had to set exhaust_item=False for slip
     def slip_into_forest(self) -> None:
         pawn_location = self.get_pawn_location()
         # Sanity check
@@ -159,7 +168,8 @@ class VagabotPlayer(Bot):
         destinations = [forest for forest in pawn_location.adjacent_forests]
         # Slip into a random forest
         random.shuffle(destinations)
-        self.move_pawn(destinations[0])  # TODO: This currently runs with SLIP-4, but SLIP-1 or SLIP-2 are more likely
+        self.move_pawn(destinations[0], exhaust_item=False)  # TODO: This currently runs with SLIP-4, but SLIP-1 or SLIP-2 are more likely
+        self.game.log(f'{self} slips into {destinations[0]}.', logging_faction=self.faction)
         self.has_slipped = True
 
     def travel_to_target_clearings(self, target_clearings: list['Clearing'],
@@ -208,6 +218,7 @@ class VagabotPlayer(Bot):
         self.travel_to_target_clearings(ruin_clearings)
         if self.get_pawn_location() in ruin_clearings:
             if self.satchel.exhaust_items_if_possible():
+                self.game.log(f'{self} explores the ruin in {self.get_pawn_location()}.', logging_faction=self.faction)
                 cast(Clearing, self.get_pawn_location()).explore_ruin(self)
 
     def special_step(self):
@@ -221,6 +232,7 @@ class VagabotPlayer(Bot):
         self.travel_to_target_clearings(quest_clearings)
         if self.get_pawn_location() in quest_clearings:
             if self.satchel.exhaust_items_if_possible(item_count=2):
+                self.game.log(f'{self} solves the quest in {self.get_pawn_location()}.', logging_faction=self.faction)
                 self.add_victory_points(2)
                 self.quest = self.game.quest_deck.draw_quest_card()
 
@@ -253,8 +265,10 @@ class VagabotPlayer(Bot):
                                  self.get_pawn_location().get_all_other_players_in_location(self) if
                                  player.crafted_items]
             sorted_valid_aid_players = sort_players_by_setup_order(valid_aid_players)
-            sorted_valid_aid_players = sort_players_by_victory_points(sorted_valid_aid_players)
+            sorted_valid_aid_players = sort_players_by_victory_points(sorted_valid_aid_players, descending=False)
             if sorted_valid_aid_players and self.satchel.exhaust_items_if_possible():
+                self.game.log(f'{self} aids {sorted_valid_aid_players[0]} in {self.get_pawn_location()}.',
+                              logging_faction=self.faction)
                 item_taken = sorted_valid_aid_players[0].crafted_items.pop()
                 self.get_item(item_taken)
                 self.add_victory_points(1)
@@ -377,6 +391,7 @@ class VagabotPlayer(Bot):
         return 3 + self.difficulty.value
 
     def repair_step(self) -> None:
+        # TODO: An Evening's Rest not working
         if isinstance(self.get_pawn_location(), Forest):
             self.satchel.repair_all_items()
         else:
@@ -391,6 +406,7 @@ class VagabotPlayer(Bot):
     ##################
 
     def battle(self, clearing: Clearing, defender: Player) -> None:
+        self.game.log(f'{self} battles {defender} in {clearing}.', logging_faction=self.faction)
         if self.has_trait(TRAIT_MARKSMAN):
             # Fortified MM is currently the only way for a piece to require two hits to be removed in battle
             # Marksman Vagabot is currently the only way for a player to deal hits in battle to a bot before the roll
@@ -459,8 +475,12 @@ class VagabotPlayer(Bot):
         # Hostility bonus: The Vagabot scores 1 VP per enemy warrior removed when they're the attacker in battle
         return len([piece for piece in removed_pieces if isinstance(piece, Warrior)])
 
+    # TODO: Investigate if defenseless
     def get_bonus_hits(self, clearing: Clearing, opponent: Player, is_attacker: bool = True) -> int:
-        return len(self.satchel.battle_track) == 3
+        bonus_hits = super().get_bonus_hits(clearing, opponent, is_attacker)
+        if len(self.satchel.battle_track) == 3:
+            bonus_hits += 1
+        return bonus_hits
 
     def is_defenseless(self, clearing: Clearing) -> bool:
         return False

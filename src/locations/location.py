@@ -87,9 +87,9 @@ class Location:
     # It's assumed the player has already checked that this is a legal location to add the piece, whether by placement
     # or movement
     def add_piece(self, player: 'Player', piece: 'Piece', trigger_placement_effects: bool = False,
-                  trigger_movement_effects: bool = False) -> None:
-        # TODO: Fix
-        # self.game.log(f'{player} adds {piece} to {self}')
+                  trigger_movement_effects: bool = False, log: bool = False) -> None:
+        if log:
+            self.game.log(f'{player} adds {piece} to {self}.', logging_faction=player.faction)
         self.piece_map(player).add_piece(piece)
         if piece.location:
             piece.location.remove_pieces_without_side_effects(player, [piece])
@@ -100,11 +100,13 @@ class Location:
             self.trigger_movement_effects(player, [piece])
 
     def add_pieces(self, player: 'Player', pieces: list['Piece'], trigger_placement_effects: bool = True,
-                   trigger_movement_effects: bool = False) -> None:
-        self.game.log(f'{player} adds {pieces} to {self}', logging_faction=player.faction)
+                   trigger_movement_effects: bool = False, log: bool = True) -> None:
+        if log and pieces and len(pieces) > 1:
+            self.game.log(f'{player} adds {pieces} to {self}.', logging_faction=player.faction)
         for piece in pieces:
             # Don't trigger movement and placement effects per piece, do it in a batch at the end of placing them
-            self.add_piece(player, piece, trigger_placement_effects=False, trigger_movement_effects=False)
+            self.add_piece(player, piece, trigger_placement_effects=False, trigger_movement_effects=False,
+                           log=(log and len(pieces) == 1))
         if trigger_placement_effects:
             self.trigger_placement_effects(player, pieces)
         if trigger_movement_effects:
@@ -112,16 +114,16 @@ class Location:
 
     # It's assumed the player has already checked that this is a legal move action
     def move_piece(self, player: 'Player', piece: 'Piece', destination: 'Location') -> None:
-        self.game.log(f'{player} moves {piece} from {self} to {destination}', logging_faction=player.faction)
+        self.game.log(f'{player} moves {piece} from {self} to {destination}.', logging_faction=player.faction)
         # Remove piece from this clearing
         self.remove_pieces_without_side_effects(player, [piece])
         destination.add_piece(player, piece, trigger_movement_effects=True)
 
     def move_pieces(self, player: 'Player', pieces: list['Piece'], destination: 'Location') -> None:
         # Remove piece from this clearing
-        self.game.log(f'{player} moves {pieces} from {self} to {destination}', logging_faction=player.faction)
+        self.game.log(f'{player} moves {pieces} from {self} to {destination}.', logging_faction=player.faction)
         self.remove_pieces_without_side_effects(player, pieces)
-        destination.add_pieces(player, pieces, trigger_movement_effects=True)
+        destination.add_pieces(player, pieces, trigger_movement_effects=True, log=False)
 
     # This is for the Vagabot's "Slip", where destination location can restrict the move but not the origin location
     # It's assumed the player has already checked that this is a legal move action

@@ -3,10 +3,12 @@ import random
 from typing import TYPE_CHECKING
 
 from bot_resources.bot import Bot
+from bot_resources.bot_constants import BotDifficulty
 from bot_resources.bot_factions.electric_eyrie.decree import Decree
 from bot_resources.bot_factions.electric_eyrie.electric_eyrie_piece_stock import ElectricEyriePieceStock
 from bot_resources.bot_factions.electric_eyrie.electric_eyrie_trait import TRAIT_NOBILITY, TRAIT_RELENTLESS, \
     TRAIT_SWOOP, TRAIT_WAR_TAX
+from bot_resources.trait import Trait
 from constants import Faction, Suit
 from locations.clearing import Clearing
 from pieces.building import Building
@@ -37,9 +39,9 @@ class ElectricEyriePlayer(Bot):
     turmoil: bool
     deal_extra_hit: bool
 
-    def __init__(self, game: 'Game') -> None:
+    def __init__(self, game: Game, difficulty: 'BotDifficulty' = None, traits: list['Trait'] = None) -> None:
         piece_stock = ElectricEyriePieceStock(self)
-        super().__init__(game, Faction.ELECTRIC_EYRIE, piece_stock)
+        super().__init__(game, Faction.ELECTRIC_EYRIE, piece_stock, difficulty=difficulty, traits=traits)
 
         self.decree = Decree(self)
         self.turmoil = False
@@ -48,9 +50,9 @@ class ElectricEyriePlayer(Bot):
     def setup(self) -> None:
         super().setup()
         starting_clearing = self.get_corner_homeland()
+        self.game.log(f'{self} starts in {starting_clearing}.', logging_faction=self.faction)
         starting_clearing.add_piece(self, self.piece_stock.get_roosts()[0])
         self.place_initial_warriors()
-        self.game.log(f'{self} starts in {starting_clearing}.', logging_faction=self.faction)
 
     def place_initial_warriors(self):
         starting_clearing = self.piece_stock.get_roosts()[0].location
@@ -248,6 +250,7 @@ class ElectricEyriePlayer(Bot):
             self.battle(clearing, potential_targets[0])
 
     def battle(self, clearing: 'Clearing', defender: 'Player') -> None:
+        self.game.log(f'{self} battles {defender} in {clearing}.', logging_faction=self.faction)
         random_rolls = (random.randint(0, 3), random.randint(0, 3))
         self.game.log(f'{self} rolls {random_rolls[0]}, {random_rolls[1]}.', logging_faction=self.faction)
         # Defender allocates the rolls - high roll to attacker, low roll to defender, except in the case of Veterans
@@ -311,6 +314,7 @@ class ElectricEyriePlayer(Bot):
     #########################
 
     def replace_first_roost(self) -> None:
+        self.game.log(f'{self} builds a new roost.', logging_faction=self.faction)
         roost_to_place = self.get_unplaced_buildings()[0]
         warrior_count_to_place = max(4, len(self.get_unplaced_warriors()))
         warriors_to_place = self.get_unplaced_warriors()[:warrior_count_to_place]
@@ -324,12 +328,11 @@ class ElectricEyriePlayer(Bot):
         self.place_pieces_in_one_of_clearings(pieces_to_place, sorted_open_building_slot_clearings)
 
     def resolve_decree(self) -> None:
-        for suit in [Suit.FOX, Suit.MOUSE, Suit.RABBIT, Suit.BIRD]:
-            if self.turmoil:
-                return
-            self.recruit_step(suit)
-            self.move_step(suit)
-            self.battle_step(suit)
+        for step in [self.recruit_step, self.move_step, self.battle_step]:
+            for suit in [Suit.FOX, Suit.MOUSE, Suit.RABBIT, Suit.BIRD]:
+                if self.turmoil:
+                    return
+                step(suit)
 
     def relentless(self) -> None:
         clearings_with_warriors = [clearing for clearing in self.game.clearings() if
@@ -358,6 +361,7 @@ class ElectricEyriePlayer(Bot):
 
     def turmoil_action(self) -> None:
         # HUMILIATE
+        self.game.log(f'{self} enters turmoil.', logging_faction=self.faction)
         bird_cards_in_decree = self.decree.get_count_of_bird_cards_in_decree()
         if self.has_trait(TRAIT_NOBILITY):
             self.add_victory_points(bird_cards_in_decree)

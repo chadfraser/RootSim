@@ -5,6 +5,7 @@ from typing import cast, Optional, Type, TYPE_CHECKING
 
 from battle_utils import DamageResult
 from bot_resources.bot import Bot
+from bot_resources.bot_constants import BotDifficulty
 from bot_resources.bot_factions.mechanical_marquise_v2.mechanical_marquise_v2_building import \
     MechanicalMarquiseV2Building
 from bot_resources.bot_factions.mechanical_marquise_v2.mechanical_marquise_v2_piece_stock import \
@@ -14,6 +15,7 @@ from bot_resources.bot_factions.mechanical_marquise_v2.mechanical_marquise_v2_tr
 from bot_resources.bot_factions.mechanical_marquise_v2.recruiter import Recruiter
 from bot_resources.bot_factions.mechanical_marquise_v2.sawmill import Sawmill
 from bot_resources.bot_factions.mechanical_marquise_v2.workshop import Workshop
+from bot_resources.trait import Trait
 from constants import Faction, Suit
 from locations.clearing import Clearing
 from pieces.warrior import Warrior
@@ -38,19 +40,19 @@ class MechanicalMarquiseV2Player(Bot):
     crafted_items: list[ItemToken]
     built_building_this_turn: bool
 
-    def __init__(self, game: Game) -> None:
+    def __init__(self, game: Game, difficulty: 'BotDifficulty' = None, traits: list['Trait'] = None) -> None:
         piece_stock = MechanicalMarquiseV2PieceStock(self)
-        super().__init__(game, Faction.MECHANICAL_MARQUISE_2_0, piece_stock)
+        super().__init__(game, Faction.MECHANICAL_MARQUISE_2_0, piece_stock, difficulty=difficulty, traits=traits)
 
         self.built_building_this_turn = False
 
     def setup(self) -> None:
         super().setup()
         starting_clearing = self.get_corner_homeland()
+        self.game.log(f'{self} starts in {starting_clearing}.', logging_faction=self.faction)
         starting_clearing.add_piece(self, self.piece_stock.get_keep())
         self.place_initial_garrison()
         self.place_initial_buildings()
-        self.game.log(f'{self} starts in {starting_clearing}.', logging_faction=self.faction)
 
     def place_initial_garrison(self) -> None:
         keep_clearing = self.piece_stock.get_keep().location
@@ -90,6 +92,7 @@ class MechanicalMarquiseV2Player(Bot):
             self.blitz()
 
     def escalated_daylight(self) -> None:
+        self.game.log(f'ESCALATED DAYLIGHT', logging_faction=self.faction)
         self.escalated_battle_step()
         self.escalated_recruit_step()
         self.escalated_build_step()
@@ -394,6 +397,7 @@ class MechanicalMarquiseV2Player(Bot):
 
     def expand_step(self) -> None:
         if not self.built_building_this_turn and self.get_score_for_building() < 3:
+            self.game.log(f'{self} expands.', logging_faction=self.faction)
             self.game.discard_card(self.order_card)
             self.order_card = self.game.draw_card()
             self.daylight()

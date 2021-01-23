@@ -39,16 +39,16 @@ class Clearing(Location):
         self.opposite_corner_clearing = None
 
     # TODO: Remove after testing
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'{self.priority}({self.suit.value[0]})'
 
-    def __lt__(self, other):
+    def __lt__(self, other) -> bool:
         return self.priority < other.priority
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return isinstance(other, Clearing) and self.priority == other.priority
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.priority)
 
     ###########################################

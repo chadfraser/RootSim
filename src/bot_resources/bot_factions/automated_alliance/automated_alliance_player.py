@@ -4,11 +4,13 @@ from typing import TYPE_CHECKING
 
 from battle_utils import DamageResult, RollResult
 from bot_resources.bot import Bot
+from bot_resources.bot_constants import BotDifficulty
 from bot_resources.bot_factions.automated_alliance.automated_alliance_piece_stock import AutomatedAlliancePieceStock
 from bot_resources.bot_factions.automated_alliance.automated_alliance_trait import TRAIT_INFORMANTS, \
     TRAIT_POPULARITY, TRAIT_VETERANS, TRAIT_WILDFIRE
 from bot_resources.bot_factions.automated_alliance.base import Base
 from bot_resources.bot_factions.automated_alliance.sympathy import Sympathy
+from bot_resources.trait import Trait
 from constants import Faction, Suit
 from locations.clearing import Clearing
 from player_resources.supply import Supply
@@ -35,11 +37,11 @@ class AutomatedAlliancePlayer(Bot):
     has_revolted: bool
     players_who_have_removed_sympathy_since_last_turn: set['Player']
 
-    SYMPATHY_SCORES = [0, 1, 1, 1, 2, 2, 3, 4, 4, 4]
+    SYMPATHY_SCORES = [0, 1, 1, 1, 1, 2, 2, 3, 3, 4]
 
-    def __init__(self, game: 'Game') -> None:
+    def __init__(self, game: Game, difficulty: 'BotDifficulty' = None, traits: list['Trait'] = None) -> None:
         piece_stock = AutomatedAlliancePieceStock(self)
-        super().__init__(game, Faction.AUTOMATED_ALLIANCE, piece_stock)
+        super().__init__(game, Faction.AUTOMATED_ALLIANCE, piece_stock, difficulty=difficulty, traits=traits)
 
         self.has_revolted = False
         self.players_who_have_removed_sympathy_since_last_turn = set()
@@ -106,6 +108,7 @@ class AutomatedAlliancePlayer(Bot):
         if not sorted_valid_revolt_clearings:
             return
         target_clearing = sorted_valid_revolt_clearings[0]
+        self.game.log(f'{self} revolts in {target_clearing}.', logging_faction=self.faction)
 
         # Remove all enemy pieces from the target clearing
         players_in_clearing = target_clearing.get_all_players_in_location()
@@ -113,8 +116,8 @@ class AutomatedAlliancePlayer(Bot):
         for player in players_in_clearing:
             if player == self:
                 continue
-            for piece in target_clearing.get_pieces_for_player(player):
-                removed_pieces.append(piece)
+            # for piece in target_clearing.get_pieces_for_player(player):
+            #     removed_pieces.append(piece)
             removed_pieces.extend(target_clearing.remove_all_pieces_of_player(player))
             self.add_victory_points(player.give_score_for_removed_pieces_not_in_battle(player, removed_pieces))
 
@@ -232,6 +235,7 @@ class AutomatedAlliancePlayer(Bot):
         sorted_base_clearings = sort_clearings_by_priority(base_clearings)
         for clearing in sorted_base_clearings:
             if clearing.get_warrior_count_for_player(self) >= self.get_organizing_amount():
+                self.game.log(f'{self} organizes in {clearing}.', logging_faction=self.faction)
                 clearing.remove_pieces(self, clearing.get_warriors_for_player(self))
                 self.spread_sympathy()
 
@@ -304,7 +308,7 @@ class AutomatedAlliancePlayer(Bot):
             return super().allocate_rolls_as_defender(rolls)
 
     def get_bonus_hits(self, clearing: 'Clearing', opponent: 'Player', is_attacker: bool = True) -> int:
-        bonus_hits = 0
+        bonus_hits = super().get_bonus_hits(clearing, opponent, is_attacker)
         # Automated Ambush
         if clearing.get_warrior_count_for_player(self) > 0:
             bonus_hits += 1
@@ -316,6 +320,7 @@ class AutomatedAlliancePlayer(Bot):
     def move_removed_pieces_into_supply(self, pieces: list['Piece'], origin_location: 'Location') -> None:
         for piece in pieces:
             if isinstance(piece, Base):
+                self.game.log(f'{self} suffers a crackdown in {piece.suit}.', logging_faction=self.faction)
                 for sympathy in self.piece_stock.get_sympathy():
                     if isinstance(sympathy.location, Clearing) and sympathy.location.suit == piece.suit:
                         sympathy.location.remove_pieces(self, [sympathy])

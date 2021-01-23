@@ -34,3 +34,6 @@ class Supply(Location):
 
     def get_pieces_of_type(self, class_name: Type['Piece']) -> list['Piece']:
         return [x for x in self.get_pieces() if isinstance(x, class_name)]
+
+    def __str__(self) -> str:
+        return f'{self.player} Supply'
