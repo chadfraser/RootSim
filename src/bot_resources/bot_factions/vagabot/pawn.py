@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 class Pawn(Piece):
     def __init__(self, player: 'VagabotPlayer') -> None:
-        super().__init__(player, 'Vagabot')
+        super().__init__(player, 'Vagabot', cannot_be_removed=True)
 
     def resolve_effects_on_attempting_to_remove_self(self) -> None:
         if isinstance(self.location, Clearing):

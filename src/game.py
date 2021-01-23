@@ -1,6 +1,6 @@
 from __future__ import annotations
 import logging
-from typing import Optional, TYPE_CHECKING, Type
+from typing import Optional, TYPE_CHECKING
 
 from board_map.autumn_board_map import AutumnBoardMap
 from bot_resources.bot_factions.automated_alliance.automated_alliance_player import AutomatedAlliancePlayer
@@ -64,7 +64,7 @@ class Game:
             player.setup()
 
         while not self.winner:
-            self.log(f'--{self.turn_player}--')
+            self.log(f'--{self.turn_player}--', logging_faction=self.turn_player.faction)
             self.turn_player.take_turn()
             next_turn_player_index = self.turn_order.index(self.turn_player) + 1
             next_turn_player_index %= len(self.turn_order)
@@ -111,7 +111,7 @@ class Game:
         if self.winner:
             return
         self.winner = player
-        self.log(f'{player} wins with {player.victory_points} VP.')
+        self.log(f'{player} wins with {player.victory_points} VP.', logging_faction=player.faction)
 
     def draw_card(self) -> Optional['Card']:
         return self.deck.draw_card()
@@ -125,7 +125,7 @@ class Game:
 
     # Skips things like Lost Souls - used to empty the Lost Souls
     def send_card_to_discard_pile(self, card: 'Card') -> None:
-        self.log(f'{card} is discarded.')
+        self.log(f'{card} is discarded.', logging_faction=self.turn_player.faction)
         if isinstance(card, DominanceCard):
             self.deck.dominance_region.append(card)
         else:
@@ -137,12 +137,22 @@ class Game:
             self.item_supply.remove(item_token)
             player.get_item(item_token)
             player.add_victory_points(score_points)
-            self.log(f'{player} crafts {item} for {score_points} VP.')
+            self.log(f'{player} crafts {item} for {score_points} VP.', logging_faction=player.faction)
 
-    def log(self, message: str, log_level: int = logging.INFO) -> None:
+    def log(self, message: str, log_level: int = logging.INFO, logging_faction: Faction = None) -> None:
+        if logging_faction == Faction.MECHANICAL_MARQUISE_2_0:
+            message = f'\u001b[31m{message}\u001b[0m'
+        elif logging_faction == Faction.ELECTRIC_EYRIE:
+            message = f'\u001b[34m{message}\u001b[0m'
+        elif logging_faction == Faction.AUTOMATED_ALLIANCE:
+            message = f'\u001b[32m{message}\u001b[0m'
+        elif logging_faction == Faction.VAGABOT:
+            message = f'\u001b[30m{message}\u001b[0m'
+        else:
+            message = f'\u001b[37m{message}\u001b[0m'
         self.logger.log(log_level, message)
 
 
 # TODO: Remove after testing
-# gg = Game(factions=[Faction.MECHANICAL_MARQUISE_2_0, Faction.ELECTRIC_EYRIE, Faction.AUTOMATED_ALLIANCE,
-#                     Faction.VAGABOT])
+gg = Game(factions=[Faction.MECHANICAL_MARQUISE_2_0, Faction.ELECTRIC_EYRIE, Faction.AUTOMATED_ALLIANCE,
+                    Faction.VAGABOT])

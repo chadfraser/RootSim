@@ -17,3 +17,6 @@ class Card(ABC):
 
     def can_be_crafted(self, player: 'Player') -> bool:
         return False
+
+    def __str__(self):
+        return f'{self.name}({self.suit.value[0]})'

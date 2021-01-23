@@ -48,3 +48,7 @@ class Piece:
 
     def get_score_for_removal(self) -> int:
         return 0
+
+    # TODO: Remove
+    def __repr__(self) -> str:
+        return self.name

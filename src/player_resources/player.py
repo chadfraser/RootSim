@@ -77,6 +77,8 @@ class Player(ABC):
         self.victory_points = max(0, self.victory_points + victory_points)
         if self.victory_points >= 30:
             self.game.win(self)
+        if victory_points > 0:
+            self.game.log(f'{self} has {self.victory_points} VP.', logging_faction=self.faction)
 
     def get_unplaced_pieces(self) -> list['Piece']:
         return self.supply.get_pieces()
@@ -138,6 +140,7 @@ class Player(ABC):
 
     def battle(self, clearing: 'Clearing', defender: 'Player') -> None:
         random_rolls = (random.randint(0, 3), random.randint(0, 3))
+        self.game.log(f'{self} rolls {random_rolls[0]}, {random_rolls[1]}.', logging_faction=self.faction)
         # Defender allocates the rolls - high roll to attacker, low roll to defender, except in the case of Veterans
         roll_result = defender.allocate_rolls_as_defender(random_rolls)
         # Each battler caps their hits and adds their relevant bonus hits
@@ -145,6 +148,8 @@ class Player(ABC):
                          self.get_bonus_hits(clearing, defender, is_attacker=True))
         defender_hits = (defender.cap_rolled_hits(clearing, roll_result.defender_roll) +
                          defender.get_bonus_hits(clearing, defender, is_attacker=False))
+        self.game.log(f'{self} does {attacker_hits} hits. {defender} does {defender_hits} hits.',
+                      logging_faction=self.faction)
         # Each battler removes their pieces and calculates how much VP the opponent should earn from the battle
         defender_damage_result = defender.suffer_damage(clearing, attacker_hits, self, is_attacker=False)
         attacker_damage_result = self.suffer_damage(clearing, defender_hits, defender, is_attacker=True)
@@ -182,6 +187,8 @@ class Player(ABC):
             for i in range(amount_of_buildings_removed):
                 removed_pieces.append(buildings[i])
                 points_awarded += buildings[i].get_score_for_removal()
+
+        self.game.log(f'{self} loses the following pieces: {removed_pieces}', logging_faction=self.faction)
         clearing.remove_pieces(self, removed_pieces)
         return DamageResult(removed_pieces=removed_pieces, points_awarded=points_awarded)
 
