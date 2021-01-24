@@ -17,6 +17,7 @@ from locations.clearing import Clearing
 from locations.forest import Forest
 from pieces.item_token import ItemToken
 from pieces.warrior import Warrior
+from player_resources.player import Player
 from player_resources.supply import Supply
 from sort_utils import sort_clearings_by_enemy_pieces, \
     sort_clearings_by_priority, sort_paths_by_lexicographic_priority, \
@@ -28,7 +29,6 @@ if TYPE_CHECKING:
     from game import Game
     from locations.location import Location
     from pieces.piece import Piece
-    from player_resources.player import Player
 
 
 class VagabotPlayer(Bot):
