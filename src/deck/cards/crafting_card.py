@@ -8,5 +8,5 @@ if TYPE_CHECKING:
 
 
 class CraftingCard(Card):
-    def __init__(self, name: str, suit: Suit) -> None:
+    def __init__(self, name: str, suit: 'Suit') -> None:
         super().__init__(name, suit)

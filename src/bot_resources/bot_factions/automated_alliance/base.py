@@ -9,8 +9,8 @@ if TYPE_CHECKING:
 
 
 class Base(Building):
-    suit: Suit
+    suit: 'Suit'
 
-    def __init__(self, player: AutomatedAlliancePlayer, suit: Suit) -> None:
+    def __init__(self, player: 'AutomatedAlliancePlayer', suit: 'Suit') -> None:
         super().__init__(player, f'{suit.value} Base')
         self.suit = suit

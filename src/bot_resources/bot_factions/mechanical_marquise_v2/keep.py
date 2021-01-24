@@ -10,8 +10,8 @@ if TYPE_CHECKING:
 
 
 class Keep(Token):
-    def __init__(self, player: MechanicalMarquiseV2Player) -> None:
+    def __init__(self, player: 'MechanicalMarquiseV2Player') -> None:
         super().__init__(player, 'The Keep')
 
-    def prevents_piece_being_placed_by_player(self, player: MechanicalMarquiseV2Player, piece: Piece) -> bool:
+    def prevents_piece_being_placed_by_player(self, player: 'MechanicalMarquiseV2Player', piece: Piece) -> bool:
         return player != self.player

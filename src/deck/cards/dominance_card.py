@@ -29,7 +29,7 @@ class BirdDominance(DominanceCard):
         super().__init__(Suit.BIRD)
 
 
-def generate_all_dominance_cards() -> list[DominanceCard]:
+def generate_all_dominance_cards() -> list['DominanceCard']:
     return [
         FoxDominance(),
         RabbitDominance(),

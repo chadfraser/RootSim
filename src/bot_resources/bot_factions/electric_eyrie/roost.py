@@ -9,8 +9,8 @@ if TYPE_CHECKING:
 
 
 class Roost(Building):
-    def __init__(self, player: ElectricEyriePlayer) -> None:
+    def __init__(self, player: 'ElectricEyriePlayer') -> None:
         super().__init__(player, 'Roost')
 
-    def prevents_piece_being_placed_by_player(self, player: ElectricEyriePlayer, piece: Piece):
+    def prevents_piece_being_placed_by_player(self, player: 'ElectricEyriePlayer', piece: Piece):
         return isinstance(piece, Roost)

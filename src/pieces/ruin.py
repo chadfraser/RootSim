@@ -6,5 +6,5 @@ if TYPE_CHECKING:
 
 
 class Ruin:
-    def __init__(self, items: list[ItemToken]):
+    def __init__(self, items: list['ItemToken']):
         self.items = items
