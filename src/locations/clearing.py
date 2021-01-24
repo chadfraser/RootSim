@@ -94,6 +94,8 @@ class Clearing(Location):
         return True
 
     # Only CC can move out of Snare clearings
+    # TODO: Have bots ignore snares for this check, but check separately before making the move if there is a snare in
+    # their current clearing
     def can_move_piece_out_of(self, player: 'Player', piece: 'Piece') -> bool:
         pieces_in_clearing = self.get_pieces()
         for piece_already_in_clearing in pieces_in_clearing:
@@ -132,6 +134,10 @@ class Clearing(Location):
         self.ruin.items.remove(item_gained)
         if not self.ruin.items:
             self.ruin = None
+
+    # TODO: Check for snare and return it if it exists
+    def get_snare(self) -> Optional[Piece]:
+        pass
 
     ###################################
     #                                 #

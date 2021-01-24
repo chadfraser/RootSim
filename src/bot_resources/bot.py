@@ -76,18 +76,20 @@ class Bot(Player, ABC):
         valid_placing_clearings = [clearing for clearing in sorted_clearings if
                                    clearing.can_place_pieces(self, pieces_to_place)]
 
-        # If we couldn't place the pieces anywhere, check if it was due to a snare, and remove that snare if so
         if not valid_placing_clearings:
-            self.remove_snare_if_it_prevents_placing(pieces_to_place, sorted_clearings, ignore_building_slots)
-            return False
-        self.supply.relocate_pieces(self, pieces_to_place, valid_placing_clearings[0])
-        return True
+            return
+        clearing_snare = valid_placing_clearings[0].get_snare()
+        if clearing_snare:
+            valid_placing_clearings[0].remove_pieces(self, [clearing_snare])
+            self.add_victory_points(1)
+        else:
+            self.supply.relocate_pieces(self, pieces_to_place, valid_placing_clearings[0])
 
     def place_pieces_spread_among_clearings(self, pieces_to_place: list['Piece'], sorted_clearings: list['Clearing'],
                                             ignore_building_slots: bool = False) -> None:
         if not pieces_to_place:
             return
-        clearings_to_place_in: dict[Clearing, list[Piece]] = defaultdict(list)
+        clearings_to_place_in: dict['Clearing', list['Piece']] = defaultdict(list)
 
         # Ensure that we can place the pieces in the given clearings
         valid_placing_clearings = [clearing for clearing in sorted_clearings if
@@ -95,7 +97,6 @@ class Bot(Player, ABC):
 
         # If we couldn't place the pieces anywhere, check if it was due to a snare, and remove that snare if so
         if not valid_placing_clearings:
-            self.remove_snare_if_it_prevents_placing(pieces_to_place, sorted_clearings, ignore_building_slots)
             return
 
         # Evenly spread the pieces along the valid clearings as much as possible, with the remainder going to those
@@ -105,44 +106,42 @@ class Bot(Player, ABC):
             target_clearing = valid_placing_clearings[clearing_index]
             clearings_to_place_in[target_clearing].append(piece)
         for clearing, pieces in clearings_to_place_in.items():
-            self.supply.relocate_pieces(self, pieces, clearing)
+            clearing_snare = clearing.get_snare()
+            if clearing_snare:
+                clearing.remove_pieces(self, [clearing_snare])
+                self.add_victory_points(1)
+            else:
+                self.supply.relocate_pieces(self, pieces, clearing)
 
-    # Checks all sorted clearings in order, and finds the first one that has a snare and would otherwise allow the
-    # piece to be placed. Removes the snare from that clearing
-    def remove_snare_if_it_prevents_placing(self, pieces_to_place: list['Piece'], sorted_clearings: list['Clearing'],
-                                            ignore_building_slots: bool = False) -> bool:
-        for clearing in sorted_clearings:
-            pieces_in_clearing = clearing.get_pieces()
-            for piece in pieces_to_place:
-                # If the issue is not having enough building slots in this clearing, skip that clearing. It's not due
-                # to a snare
-                if (isinstance(piece, Building) and clearing.get_open_building_slot_count() == 0 and
-                        not ignore_building_slots):
-                    continue
-                # Check if the clearing has any snares - if not, skip that clearing
-                # ...
-                for piece_already_in_clearing in pieces_in_clearing:
-                    # Add 'if piece is not snare'. If so, continue
-                    if piece_already_in_clearing.prevents_piece_being_placed_by_player(self, piece):
-                        continue
-                # Remove the snare from the clearing and return True
-        return False
+    # If you're doing an iterative movement (there are multiple possible origin clearings, but you only want to move
+    # from the first valid one, like EE), first call remove_snare_if_it_prevents_movement and return if that returns
+    # True
+    def get_movement_destination(self, pieces_to_move: list['Piece'], origin_clearing: 'Clearing',
+                                 sorted_destinations: list['Location'], requires_rule: bool = True) -> Optional[Location]:
+        clearing_snare = origin_clearing.get_snare()
+        for destination in sorted_destinations:
+            if origin_clearing.can_move_pieces(self, pieces_to_move, destination, requires_rule):
+                if clearing_snare:
+                    origin_clearing.remove_pieces(self, [clearing_snare])
+                    self.add_victory_points(1)
+                    return
+                else:
+                    return destination
 
     # Checks that the origin clearing has a snare, and that the pieces would be able to move to at least one clearing
     # otherwise. If so, removes the snare from the origin clearing
-    # Currently relies on the fact that only the Snare restricts movement out of a clearing, but this can be adjusted
-    # if need be in the future
     def remove_snare_if_it_prevents_movement(self, pieces_to_move: list['Piece'], origin_clearing: 'Clearing',
                                              sorted_destinations: list['Location'],
                                              requires_rule: bool = True) -> bool:
         # Check if the origin clearing has any snares - if not, return
-        # ...
+        clearing_snare = origin_clearing.get_snare()
+        if not clearing_snare:
+            return False
         for destination in sorted_destinations:
-            # Skip clearings that you can't move to because of rule
-            if (requires_rule and isinstance(destination, Clearing) and not
-                    (self.does_rule_clearing(origin_clearing) or self.does_rule_clearing(destination))):
-                continue
-            if destination.can_move_pieces_into(self, pieces_to_move):
+            # Confirm that there exists at least one legal move out from the origin clearing
+            if origin_clearing.can_move_pieces(self, pieces_to_move, destination, requires_rule):
                 # Remove the snare from the origin clearing and return
+                origin_clearing.remove_pieces(self, [clearing_snare])
+                self.add_victory_points(1)
                 return True
         return False

@@ -196,9 +196,6 @@ class MechanicalMarquiseV2Player(Bot):
 
         ruled_ordered_clearings = [clearing for clearing in self.get_ruled_ordered_clearings()]
         sorted_ruled_ordered_clearings = sort_clearings_by_priority(ruled_ordered_clearings)
-        # TODO: For the time being, this uses BASE-1, where it just skips recruiting in a snare unless there's no other
-        # available option
-        # TODO: Update to BASE-2: Try and fail to recruit at the snare
         self.place_pieces_spread_among_clearings(warriors_to_recruit, sorted_ruled_ordered_clearings)
 
         warrior_count_recruited = warrior_count_in_supply - len(self.get_unplaced_warriors())
@@ -216,9 +213,6 @@ class MechanicalMarquiseV2Player(Bot):
         sorted_ruled_clearings = sort_clearings_by_priority(ruled_clearings, descending=True)
         # Only recruit in at most two clearings
         sorted_ruled_clearings = sorted_ruled_clearings[:2]
-        # TODO: For the time being, this uses ESCALATED-2, where it skips recruiting in a snare unless there's no other
-        # available option, but also won't go back to find a second clearing to recruit in if one has a snare
-        # TODO: Update to ESCALATED-3: Try and fail to recruit at the snare
         self.place_pieces_spread_among_clearings(warriors_to_recruit, sorted_ruled_clearings)
 
         warrior_count_recruited = warrior_count_in_supply - len(self.get_unplaced_warriors())
@@ -229,17 +223,6 @@ class MechanicalMarquiseV2Player(Bot):
         if len(warriors_available_to_recruit) > self.get_recruiting_amount():
             return warriors_available_to_recruit[:self.get_recruiting_amount()]
         return warriors_available_to_recruit
-
-    # TODO: Cleanup, remove
-    # def recruit_in_clearings(self, warriors_to_recruit: list[Warrior], valid_target_clearings: list[Clearing]) -> None:
-    #     clearings_to_recruit_in: dict[Clearing, list[Warrior]] = defaultdict(list)
-    #     # Iterate through the clearings in order so any remainder is spread evening among those at the start of the list
-    #     for idx, warrior in enumerate(warriors_to_recruit):
-    #         clearing_index = idx % len(valid_target_clearings)
-    #         target_clearing = valid_target_clearings[clearing_index]
-    #         clearings_to_recruit_in[target_clearing].append(warrior)
-    #     for clearing, warriors in clearings_to_recruit_in.items():
-    #         self.supply.relocate_pieces(self, warriors, clearing)
 
     def get_recruiting_amount(self) -> int:
         return 3 + self.difficulty.value
@@ -268,12 +251,6 @@ class MechanicalMarquiseV2Player(Bot):
             return
         if self.place_pieces_in_one_of_clearings([building_to_build], sorted_ruled_clearings):
             self.built_building_this_turn = True
-        # TODO: Cleanup/remove
-        # for clearing in sorted_ruled_clearings:
-        #     if clearing.can_place_piece(self, building_to_build):
-        #         return self.build_building(clearing, building_to_build)
-        # # If we couldn't build anywhere, check if it was due to a snare, and remove that snare if so
-        # self.remove_snare_if_it_prevents_placing([building_to_build], sorted_ruled_clearings)
 
     def get_ruled_clearings_sorted_by_build_order(self) -> list['Clearing']:
         # Sort by priority first, then by warrior count so priority is the tie-breaker
@@ -371,15 +348,10 @@ class MechanicalMarquiseV2Player(Bot):
         sort_clearings_by_priority(origin_clearings)
         for origin_clearing in origin_clearings:
             valid_destination_clearings = self.find_adjacent_clearings_sorted_by_most_enemy_pieces(origin_clearing)
-            for destination_clearing in valid_destination_clearings:
-                if origin_clearing.can_move_pieces(self, origin_clearing.get_warriors_for_player(self),
-                                                   destination_clearing, requires_rule=True):
-                    planned_movements[origin_clearing] = destination_clearing
-                    break
-            # If we haven't found any legal destination, check if it was due to a snare, and remove that snare if so
-            if origin_clearing not in planned_movements:
-                self.remove_snare_if_it_prevents_movement(origin_clearing.get_warriors_for_player(self),
-                                                          origin_clearing, valid_destination_clearings)
+            destination = self.get_movement_destination(origin_clearing.get_warriors_for_player(self),
+                                                        origin_clearing, valid_destination_clearings)
+            if destination:
+                planned_movements[origin_clearing] = destination
         return planned_movements
 
     def find_adjacent_clearings_sorted_by_most_enemy_pieces(self, origin_clearing: 'Clearing') -> list['Clearing']:
@@ -411,19 +383,16 @@ class MechanicalMarquiseV2Player(Bot):
             warriors_to_move = warriors_in_clearing[1:]
             if warriors_to_move:
                 valid_destination_clearings = self.find_adjacent_clearings_sorted_by_most_enemy_pieces(origin_clearing)
-                for destination_clearing in valid_destination_clearings:
-                    if origin_clearing.can_move_pieces(self, warriors_to_move, destination_clearing):
-                        self.move(warriors_to_move, origin_clearing, destination_clearing)
-                        self.initiate_battle(destination_clearing)
-                        return
-        # If we haven't found any legal movement, check if it was due to a snare, and remove that snare if so
-        for origin_clearing in ruled_empty_clearings:
-            warriors_in_clearing = origin_clearing.get_warriors_for_player(self)
-            warriors_to_move = warriors_in_clearing[1:]
-            if warriors_to_move:
-                valid_destination_clearings = self.find_adjacent_clearings_sorted_by_most_enemy_pieces(origin_clearing)
+                # If there's a snare in the origin clearing and we have a legal move, remove the snare and cancel the
+                # movement
                 if self.remove_snare_if_it_prevents_movement(warriors_to_move, origin_clearing,
                                                              valid_destination_clearings):
+                    return
+                destination_clearing = self.get_movement_destination(warriors_to_move, origin_clearing,
+                                                                     valid_destination_clearings)
+                if destination_clearing:
+                    self.move(warriors_to_move, origin_clearing, destination_clearing)
+                    self.initiate_battle(destination_clearing)
                     return
 
     # MM2.0 takes half the damage of a normal hit if they're Fortified, and in a clearing with only their buildings
