@@ -1,6 +1,6 @@
 from __future__ import annotations
 import random
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from battle_utils import DamageResult, RollResult
 from bot_resources.bot import Bot
@@ -39,7 +39,8 @@ class AutomatedAlliancePlayer(Bot):
 
     SYMPATHY_SCORES = [0, 1, 1, 1, 1, 2, 2, 3, 3, 4]
 
-    def __init__(self, game: Game, difficulty: 'BotDifficulty' = None, traits: list['Trait'] = None) -> None:
+    def __init__(self, game: Optional['Game'], difficulty: 'BotDifficulty' = None,
+                 traits: list['Trait'] = None) -> None:
         piece_stock = AutomatedAlliancePieceStock(self)
         super().__init__(game, Faction.AUTOMATED_ALLIANCE, piece_stock, difficulty=difficulty, traits=traits)
 
@@ -322,6 +323,7 @@ class AutomatedAlliancePlayer(Bot):
             if isinstance(piece, Base):
                 self.game.log(f'{self} suffers a crackdown in {piece.suit}.', logging_faction=self.faction)
                 for sympathy in self.piece_stock.get_sympathy():
-                    if isinstance(sympathy.location, Clearing) and sympathy.location.suit == piece.suit:
+                    if (isinstance(sympathy.location, Clearing) and sympathy.location.suit == piece.suit and
+                            sympathy not in pieces):
                         sympathy.location.remove_pieces(self, [sympathy])
         self.supply.add_pieces(self, pieces)

@@ -40,7 +40,8 @@ class MechanicalMarquiseV2Player(Bot):
     crafted_items: list[ItemToken]
     built_building_this_turn: bool
 
-    def __init__(self, game: Game, difficulty: 'BotDifficulty' = None, traits: list['Trait'] = None) -> None:
+    def __init__(self, game: Optional['Game'], difficulty: 'BotDifficulty' = None,
+                 traits: list['Trait'] = None) -> None:
         piece_stock = MechanicalMarquiseV2PieceStock(self)
         super().__init__(game, Faction.MECHANICAL_MARQUISE_2_0, piece_stock, difficulty=difficulty, traits=traits)
 

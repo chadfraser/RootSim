@@ -7,7 +7,6 @@ from typing import Optional, TYPE_CHECKING
 from bot_resources.bot_constants import BotDifficulty
 from deck.cards.item_card import ItemCard
 from locations.location import Location
-from pieces.building import Building
 from player_resources.player import Player
 
 if TYPE_CHECKING:
@@ -25,7 +24,7 @@ class Bot(Player, ABC):
     order_card: Optional['Card']
     traits: list['Trait']
 
-    def __init__(self, game: 'Game', faction: 'Faction', piece_stock: 'PieceStock' = None,
+    def __init__(self, game: Optional['Game'], faction: 'Faction', piece_stock: 'PieceStock' = None,
                  difficulty: 'BotDifficulty' = BotDifficulty.BEGINNER, traits: list['Trait'] = None) -> None:
         if traits is None:
             traits = []
@@ -77,13 +76,15 @@ class Bot(Player, ABC):
                                    clearing.can_place_pieces(self, pieces_to_place)]
 
         if not valid_placing_clearings:
-            return
+            return False
         clearing_snare = valid_placing_clearings[0].get_snare()
         if clearing_snare:
             valid_placing_clearings[0].remove_pieces(self, [clearing_snare])
             self.add_victory_points(1)
+            return False
         else:
             self.supply.relocate_pieces(self, pieces_to_place, valid_placing_clearings[0])
+            return True
 
     def place_pieces_spread_among_clearings(self, pieces_to_place: list['Piece'], sorted_clearings: list['Clearing'],
                                             ignore_building_slots: bool = False) -> None:

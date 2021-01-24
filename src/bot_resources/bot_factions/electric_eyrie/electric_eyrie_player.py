@@ -1,6 +1,6 @@
 from __future__ import annotations
 import random
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from bot_resources.bot import Bot
 from bot_resources.bot_constants import BotDifficulty
@@ -39,7 +39,8 @@ class ElectricEyriePlayer(Bot):
     turmoil: bool
     deal_extra_hit: bool
 
-    def __init__(self, game: Game, difficulty: 'BotDifficulty' = None, traits: list['Trait'] = None) -> None:
+    def __init__(self, game: Optional['Game'], difficulty: 'BotDifficulty' = None,
+                 traits: list['Trait'] = None) -> None:
         piece_stock = ElectricEyriePieceStock(self)
         super().__init__(game, Faction.ELECTRIC_EYRIE, piece_stock, difficulty=difficulty, traits=traits)
 
