@@ -103,9 +103,6 @@ class ElectricEyriePlayer(Bot):
             return
         warriors_to_recruit = self.get_warriors_to_recruit(suit)
         if not warriors_to_recruit:
-            # TODO: Remove - Nobility update
-            if self.has_trait(TRAIT_NOBILITY):
-                self.turmoil = True
             return
 
         roost_ordered_clearings = [clearing for clearing in self.game.get_clearings_of_suit(suit) if
@@ -116,16 +113,7 @@ class ElectricEyriePlayer(Bot):
         sorted_roost_ordered_clearings = sort_clearings_by_enemy_pieces(sorted_roost_ordered_clearings, self)
         self.place_pieces_in_one_of_clearings(warriors_to_recruit, sorted_roost_ordered_clearings)
 
-        # TODO: Remove - Nobility update
-        # If we couldn't recruit anywhere, or couldn't recruit as many warriors as we were supposed to, check if we
-        # have the Nobility trait. If so, enter turmoil
-        warrior_count_recruited = warrior_count_in_supply - len(self.get_unplaced_warriors())
-        if warrior_count_recruited < self.get_recruiting_amount(suit):
-            if self.has_trait(TRAIT_NOBILITY):
-                self.turmoil = True
-            return
-
-    def get_warriors_to_recruit(self, suit: 'Suit') -> list['Warrior']:
+    def get_warriors_to_recruit(self, suit: Suit) -> list[Warrior]:
         warriors_available_to_recruit = self.get_unplaced_warriors()
         if len(warriors_available_to_recruit) > self.get_recruiting_amount(suit):
             return warriors_available_to_recruit[:self.get_recruiting_amount(suit)]
@@ -349,7 +337,6 @@ class ElectricEyriePlayer(Bot):
                 clearing.remove_pieces(player, defenseless_pieces)
 
     def swoop(self) -> None:
-        # TODO: Triggers Nobility turmoil? - No, Nobility update
         warrior_count_to_place = max(2, len(self.get_unplaced_warriors()))
         warriors_to_place = self.get_unplaced_warriors()[:warrior_count_to_place]
         clearings_without_own_pieces = [clearing for clearing in self.game.clearings() if
@@ -357,7 +344,6 @@ class ElectricEyriePlayer(Bot):
         sorted_clearings_without_own_pieces = sort_clearings_by_priority(clearings_without_own_pieces)
 
         self.place_pieces_in_one_of_clearings(warriors_to_place, sorted_clearings_without_own_pieces)
-        # TODO: Check if this triggers turmoil? No, nobility update
 
     def turmoil_action(self) -> None:
         # HUMILIATE
