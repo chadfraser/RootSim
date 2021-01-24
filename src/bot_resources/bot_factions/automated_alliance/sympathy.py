@@ -9,8 +9,8 @@ if TYPE_CHECKING:
 
 
 class Sympathy(Token):
-    def __init__(self, player: AutomatedAlliancePlayer) -> None:
+    def __init__(self, player: 'AutomatedAlliancePlayer') -> None:
         super().__init__(player, 'Sympathy')
 
-    def prevents_piece_being_placed_by_player(self, player: AutomatedAlliancePlayer, piece: Piece) -> bool:
+    def prevents_piece_being_placed_by_player(self, player: 'AutomatedAlliancePlayer', piece: 'Piece') -> bool:
         return isinstance(piece, Sympathy)

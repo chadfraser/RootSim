@@ -10,13 +10,13 @@ if TYPE_CHECKING:
 
 
 class VagabotPieceStock(PieceStock):
-    def __init__(self, player: VagabotPlayer) -> None:
+    def __init__(self, player: 'VagabotPlayer') -> None:
         other_pieces = [Pawn(player)]
 
         super().__init__(player, other_pieces=other_pieces)
 
-    def get_pawn(self) -> Pawn:
+    def get_pawn(self) -> 'Pawn':
         return cast(Pawn, self.other_pieces[0])
 
-    def get_pawn_location(self) -> Location:
+    def get_pawn_location(self) -> 'Location':
         return self.get_pawn().location

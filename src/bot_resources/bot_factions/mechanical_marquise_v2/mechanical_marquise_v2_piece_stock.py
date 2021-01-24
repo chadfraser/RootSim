@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class MechanicalMarquiseV2PieceStock(PieceStock):
-    def __init__(self, player: MechanicalMarquiseV2Player) -> None:
+    def __init__(self, player: 'MechanicalMarquiseV2Player') -> None:
         warriors = [Warrior(player) for _ in range(25)]
 
         buildings: list[MechanicalMarquiseV2Building] = [Sawmill(player) for _ in range(6)]
@@ -28,17 +28,17 @@ class MechanicalMarquiseV2PieceStock(PieceStock):
 
         super().__init__(player, warriors, buildings, tokens)
 
-    def get_sawmills(self) -> list[Sawmill]:
+    def get_sawmills(self) -> list['Sawmill']:
         sawmills = [building for building in self.buildings if isinstance(building, Sawmill)]
         return sawmills
 
-    def get_workshops(self) -> list[Workshop]:
+    def get_workshops(self) -> list['Workshop']:
         workshops = [building for building in self.buildings if isinstance(building, Workshop)]
         return workshops
 
-    def get_recruiters(self) -> list[Recruiter]:
+    def get_recruiters(self) -> list['Recruiter']:
         recruiters = [building for building in self.buildings if isinstance(building, Recruiter)]
         return recruiters
 
-    def get_keep(self) -> Keep:
+    def get_keep(self) -> 'Keep':
         return [token for token in self.tokens if isinstance(token, Keep)][0]

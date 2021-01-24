@@ -15,17 +15,17 @@ if TYPE_CHECKING:
 
 
 class Clearing(Location):
-    suit: Suit
+    suit: 'Suit'
     priority: int
     total_building_slots: int
-    path_connected_clearings: set[Clearing]
-    river_connected_clearings: set[Clearing]
-    adjacent_forests: set[Forest]
-    ruin: Optional[Ruin]
+    path_connected_clearings: set['Clearing']
+    river_connected_clearings: set['Clearing']
+    adjacent_forests: set['Forest']
+    ruin: Optional['Ruin']
     is_corner_clearing: bool
-    opposite_corner_clearing: Optional[Clearing]
+    opposite_corner_clearing: Optional['Clearing']
 
-    def __init__(self, game: Game, suit: Suit, priority: int, total_building_slots: int,
+    def __init__(self, game: 'Game', suit: 'Suit', priority: int, total_building_slots: int,
                  is_corner_clearing: bool = False) -> None:
         super().__init__(game)
         self.suit = suit
@@ -39,16 +39,16 @@ class Clearing(Location):
         self.opposite_corner_clearing = None
 
     # TODO: Remove after testing
-    def __repr__(self):
-        return str(self.priority) + str(self.suit.value)
+    def __repr__(self) -> str:
+        return f'{self.priority}({self.suit.value[0]})'
 
-    def __lt__(self, other):
+    def __lt__(self, other) -> bool:
         return self.priority < other.priority
 
-    def __eq__(self, other):
-        return self.priority == other.priority
+    def __eq__(self, other) -> bool:
+        return isinstance(other, Clearing) and self.priority == other.priority
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.priority)
 
     ###########################################
@@ -57,23 +57,23 @@ class Clearing(Location):
     #                                         #
     ###########################################
 
-    def connect_clearing_by_path(self, other_clearing: Clearing) -> None:
+    def connect_clearing_by_path(self, other_clearing: 'Clearing') -> None:
         self.path_connected_clearings.add(other_clearing)
         other_clearing.path_connected_clearings.add(self)
 
-    def connect_clearing_by_river(self, other_clearing: Clearing) -> None:
+    def connect_clearing_by_river(self, other_clearing: 'Clearing') -> None:
         self.river_connected_clearings.add(other_clearing)
         other_clearing.river_connected_clearings.add(self)
 
-    def mark_forest_as_adjacent_to_self(self, forest: Forest) -> None:
+    def mark_forest_as_adjacent_to_self(self, forest: 'Forest') -> None:
         self.adjacent_forests.add(forest)
         forest.adjacent_clearings.add(self)
 
-    def mark_corner_clearings_as_opposite(self, opposing_clearing: Clearing) -> None:
+    def mark_corner_clearings_as_opposite(self, opposing_clearing: 'Clearing') -> None:
         self.opposite_corner_clearing = opposing_clearing
         opposing_clearing.opposite_corner_clearing = self
 
-    def add_ruin(self, ruin: Ruin) -> None:
+    def add_ruin(self, ruin: 'Ruin') -> None:
         self.ruin = ruin
 
     ##################################################################
@@ -83,7 +83,7 @@ class Clearing(Location):
     ##################################################################
 
     # ignore_building_slots: Revolt, Sanctify - things that will remove the occupying buildings before placing
-    def can_place_piece(self, player: Player, piece: Piece, ignore_building_slots: bool = False) -> bool:
+    def can_place_piece(self, player: 'Player', piece: 'Piece', ignore_building_slots: bool = False) -> bool:
         if isinstance(piece, Building) and self.get_open_building_slot_count() == 0 and not ignore_building_slots:
             return False
         pieces_in_clearing = self.get_pieces()
@@ -96,7 +96,7 @@ class Clearing(Location):
     # Only CC can move out of Snare clearings
     # TODO: Have bots ignore snares for this check, but check separately before making the move if there is a snare in
     # their current clearing
-    def can_move_piece_out_of(self, player: Player, piece: Piece) -> bool:
+    def can_move_piece_out_of(self, player: 'Player', piece: 'Piece') -> bool:
         pieces_in_clearing = self.get_pieces()
         for piece_already_in_clearing in pieces_in_clearing:
             # Snare
@@ -104,7 +104,8 @@ class Clearing(Location):
                 return False
         return True
 
-    def can_move_piece(self, player: Player, piece: Piece, destination: Location, requires_rule: bool = False) -> bool:
+    def can_move_piece(self, player: 'Player', piece: 'Piece', destination: 'Location',
+                       requires_rule: bool = False) -> bool:
         # We'll never look for rule in move that isn't from one clearing to another clearing
         if requires_rule and isinstance(destination, Clearing):
             if not player.does_rule_clearing(self) and not player.does_rule_clearing(destination):
@@ -125,7 +126,7 @@ class Clearing(Location):
             used_building_slot_count += 1
         return self.total_building_slots - used_building_slot_count
 
-    def explore_ruin(self, player: Player) -> None:
+    def explore_ruin(self, player: 'Player') -> None:
         if not self.ruin or not self.ruin.items:
             return
         item_gained = self.ruin.items[0]
@@ -146,11 +147,11 @@ class Clearing(Location):
 
     # For Vagabot movement primarily
     # Ignore move:
-    def find_shortest_legal_paths_to_destination_clearing(self, player: Player, moving_piece: Piece,
-                                                          destination: Clearing,
-                                                          ignore_move: bool = False) -> list[list[Clearing]]:
+    def find_shortest_legal_paths_to_destination_clearing(self, player: 'Player', moving_piece: Piece,
+                                                          destination: 'Clearing',
+                                                          ignore_move: bool = False) -> list[list['Clearing']]:
         if self == destination:
-            return [[]]
+            return [[self]]
         if not destination.can_move_piece_into(player, moving_piece):
             return []
 
@@ -171,7 +172,9 @@ class Clearing(Location):
                 next_path = [c for c in current_path]
                 next_path.append(adjacent_clearing)
                 if adjacent_clearing == destination:
-                    all_shortest_paths.append(current_path)
+                    if all_shortest_paths and len(all_shortest_paths[0]) < len(next_path):
+                        continue
+                    all_shortest_paths.append(next_path)
                 # Breadth-first-search: Once we find a path to the destination N clearings away, we know no path to
                 # the destination is shorter than N, so don't add any more to the clearing_paths queue
                 elif not all_shortest_paths:
@@ -182,7 +185,7 @@ class Clearing(Location):
 
     # TODO: Defenseless vagabond, Ferocious Rivetfolk
     # TODO: FIX! THIS IGNORES STUFF LIKE RIVETFOLK GARRISON
-    def get_players_with_defenseless_pieces(self) -> list[Player]:
+    def get_players_with_defenseless_pieces(self) -> list['Player']:
         players_with_defenseless_pieces = []
         for player in self.pieces:
             if player.is_defenseless(self):

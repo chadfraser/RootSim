@@ -23,15 +23,15 @@ if TYPE_CHECKING:
 
 class Player(ABC):
     victory_points: int
-    game: Game
-    faction: Faction
-    piece_stock: PieceStock
-    supply: Supply
-    hand: list[Card]
-    revealed_cards: list[Card]
-    crafted_items: list[ItemToken]
+    game: 'Game'
+    faction: 'Faction'
+    piece_stock: 'PieceStock'
+    supply: 'Supply'
+    hand: list['Card']
+    revealed_cards: list['Card']
+    crafted_items: list['ItemToken']
 
-    def __init__(self, game: Game, faction: Faction, piece_stock: PieceStock = None) -> None:
+    def __init__(self, game: 'Game', faction: 'Faction', piece_stock: 'PieceStock' = None) -> None:
         if piece_stock is None:
             piece_stock = PieceStock(self)
 
@@ -55,7 +55,7 @@ class Player(ABC):
         self.evening()
 
     # TODO: Remove
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self.faction.value)
 
     @abstractmethod
@@ -70,24 +70,29 @@ class Player(ABC):
     def evening(self) -> None:
         pass
 
+    def between_turns(self) -> None:
+        pass
+
     def add_victory_points(self, victory_points: int) -> None:
         self.victory_points = max(0, self.victory_points + victory_points)
         if self.victory_points >= 30:
             self.game.win(self)
+        if victory_points > 0:
+            self.game.log(f'{self} now has total {self.victory_points} VP.', logging_faction=self.faction)
 
-    def get_unplaced_pieces(self) -> list[Piece]:
+    def get_unplaced_pieces(self) -> list['Piece']:
         return self.supply.get_pieces()
 
-    def get_unplaced_warriors(self) -> list[Warrior]:
+    def get_unplaced_warriors(self) -> list['Warrior']:
         return self.supply.get_warriors()
 
-    def get_unplaced_buildings(self) -> list[Building]:
+    def get_unplaced_buildings(self) -> list['Building']:
         return self.supply.get_buildings()
 
-    def get_unplaced_tokens(self) -> list[Token]:
+    def get_unplaced_tokens(self) -> list['Token']:
         return self.supply.get_tokens()
 
-    def get_unplaced_other_pieces(self) -> list[Piece]:
+    def get_unplaced_other_pieces(self) -> list['Piece']:
         return self.supply.get_other_pieces()
 
     ################
@@ -96,7 +101,7 @@ class Player(ABC):
     #              #
     ################
 
-    def does_rule_clearing(self, clearing: Clearing) -> bool:
+    def does_rule_clearing(self, clearing: 'Clearing') -> bool:
         all_players_in_clearing = clearing.get_all_other_players_in_location(self)
         own_rule_value_in_clearing = self.get_rule_value(clearing)
         if own_rule_value_in_clearing == 0:
@@ -106,21 +111,21 @@ class Player(ABC):
                 return False
         return True
 
-    def get_ruled_clearings(self) -> list[Clearing]:
+    def get_ruled_clearings(self) -> list['Clearing']:
         ruled_clearings = []
         for clearing in self.game.clearings():
             if self.does_rule_clearing(clearing):
                 ruled_clearings.append(clearing)
         return ruled_clearings
 
-    def get_ruled_suited_clearings(self, suit: Suit) -> list[Clearing]:
+    def get_ruled_suited_clearings(self, suit: Suit) -> list['Clearing']:
         ruled_suited_clearings = []
         for clearing in self.game.get_clearings_of_suit(suit):
             if self.does_rule_clearing(clearing):
                 ruled_suited_clearings.append(clearing)
         return ruled_suited_clearings
 
-    def get_rule_value(self, clearing: Clearing) -> int:
+    def get_rule_value(self, clearing: 'Clearing') -> int:
         rule_value = 0
         for piece in clearing.get_pieces_for_player(self):
             if isinstance(piece, Warrior) or isinstance(piece, Building):
@@ -133,8 +138,10 @@ class Player(ABC):
     #                #
     ##################
 
-    def battle(self, clearing: Clearing, defender: Player) -> None:
+    def battle(self, clearing: 'Clearing', defender: 'Player') -> None:
+        self.game.log(f'{self} battles {defender} in {clearing}.', logging_faction=self.faction)
         random_rolls = (random.randint(0, 3), random.randint(0, 3))
+        self.game.log(f'{self} rolls {random_rolls[0]}, {random_rolls[1]}.', logging_faction=self.faction)
         # Defender allocates the rolls - high roll to attacker, low roll to defender, except in the case of Veterans
         roll_result = defender.allocate_rolls_as_defender(random_rolls)
         # Each battler caps their hits and adds their relevant bonus hits
@@ -142,6 +149,8 @@ class Player(ABC):
                          self.get_bonus_hits(clearing, defender, is_attacker=True))
         defender_hits = (defender.cap_rolled_hits(clearing, roll_result.defender_roll) +
                          defender.get_bonus_hits(clearing, defender, is_attacker=False))
+        self.game.log(f'{self} does {attacker_hits} hits. {defender} does {defender_hits} hits.',
+                      logging_faction=self.faction)
         # Each battler removes their pieces and calculates how much VP the opponent should earn from the battle
         defender_damage_result = defender.suffer_damage(clearing, attacker_hits, self, is_attacker=False)
         attacker_damage_result = self.suffer_damage(clearing, defender_hits, defender, is_attacker=True)
@@ -153,7 +162,7 @@ class Player(ABC):
                                     defender.supplementary_score_for_removed_pieces_in_battle(
                                         self, attacker_damage_result.removed_pieces, is_attacker=False))
 
-    def suffer_damage(self, clearing: Clearing, hits: int, opponent: Player, is_attacker: bool) -> DamageResult:
+    def suffer_damage(self, clearing: 'Clearing', hits: int, opponent: 'Player', is_attacker: bool) -> 'DamageResult':
         removed_pieces = []
         points_awarded = 0
         if hits:
@@ -179,39 +188,41 @@ class Player(ABC):
             for i in range(amount_of_buildings_removed):
                 removed_pieces.append(buildings[i])
                 points_awarded += buildings[i].get_score_for_removal()
+
+        self.game.log(f'{self} loses the following pieces: {removed_pieces}', logging_faction=self.faction)
         clearing.remove_pieces(self, removed_pieces)
         return DamageResult(removed_pieces=removed_pieces, points_awarded=points_awarded)
 
-    def allocate_rolls_as_defender(self, rolls: tuple[int, int]) -> RollResult:
+    def allocate_rolls_as_defender(self, rolls: tuple[int, int]) -> 'RollResult':
         if rolls[0] < rolls[1]:
             return RollResult(attacker_roll=rolls[1], defender_roll=rolls[0])
         return RollResult(attacker_roll=rolls[0], defender_roll=rolls[1])
 
-    def cap_rolled_hits(self, clearing: Clearing, roll: int) -> int:
+    def cap_rolled_hits(self, clearing: 'Clearing', roll: int) -> int:
         return min(roll, clearing.get_warrior_count_for_player(self))
 
-    def get_bonus_hits(self, clearing: Clearing, opponent: Player, is_attacker: bool = True) -> int:
+    def get_bonus_hits(self, clearing: 'Clearing', opponent: 'Player', is_attacker: bool = True) -> int:
         bonus_hits = 0
         if clearing.get_warrior_count_for_player(self) > 0 and opponent.is_defenseless(clearing):
             bonus_hits += 1
         return bonus_hits
 
     # TODO: Vagabot is not a warrior, but never defenseless. RC are not defenseless with a Garrison
-    def is_defenseless(self, clearing: Clearing) -> bool:
+    def is_defenseless(self, clearing: 'Clearing') -> bool:
         return clearing.get_warrior_count_for_player(self) == 0 and clearing.get_piece_count_for_player(self) > 0
 
-    def give_score_for_removed_pieces_not_in_battle(self, other_player: Player, removed_pieces: list[Piece]) -> int:
+    def give_score_for_removed_pieces_not_in_battle(self, other_player: 'Player', removed_pieces: list['Piece']) -> int:
         victory_points_gained = 0
         for piece in removed_pieces:
             victory_points_gained += piece.get_score_for_removal()
         return victory_points_gained
 
-    def supplementary_score_for_removed_pieces_in_battle(self, other_player: Player, removed_pieces: list[Piece],
+    def supplementary_score_for_removed_pieces_in_battle(self, other_player: 'Player', removed_pieces: list['Piece'],
                                                          is_attacker: bool) -> int:
         return 0
 
-    def supplementary_score_for_removed_pieces_not_in_battle(self, other_player: Player,
-                                                             removed_pieces: list[Piece]) -> int:
+    def supplementary_score_for_removed_pieces_not_in_battle(self, other_player: 'Player',
+                                                             removed_pieces: list['Piece']) -> int:
         return 0
 
     ################
@@ -221,19 +232,22 @@ class Player(ABC):
     ################
 
     # This assumes you have already checked that the move is legal
-    def move(self, moving_pieces: list[Piece], origin: Location, destination: Location) -> None:
+    def move(self, moving_pieces: list['Piece'], origin: 'Location', destination: 'Location') -> None:
         return origin.move_pieces(self, moving_pieces, destination)
 
-    def move_removed_pieces_into_supply(self, pieces: list[Piece], origin_location: Location) -> None:
+    def move_removed_pieces_into_supply(self, pieces: list['Piece'], origin_location: 'Location') -> None:
         self.supply.add_pieces(self, pieces)
 
     # Hospitals and Robot Revenge are not triggered if they are not the attacker
-    def move_removed_pieces_into_supply_from_battle(self, pieces: list[Piece], origin_location: Location,
+    def move_removed_pieces_into_supply_from_battle(self, pieces: list['Piece'], origin_location: 'Location',
                                                     is_attacker: bool) -> None:
         self.move_removed_pieces_into_supply(pieces, origin_location)
 
     # TODO: Only if the player has bought Riverboats
     def treats_rivers_as_paths(self) -> bool:
+        return False
+
+    def halves_damage(self, battle_clearing: 'Clearing') -> bool:
         return False
 
     #########################
@@ -246,10 +260,10 @@ class Player(ABC):
     def takes_discarded_cards(self) -> bool:
         return False
 
-    def handle_discarded_card(self, card: Card) -> None:
+    def handle_discarded_card(self, card: 'Card') -> None:
         pass
 
-    def get_adjacent_clearings(self, origin: Union[Clearing, Forest]) -> list[Clearing]:
+    def get_adjacent_clearings(self, origin: Union['Clearing', 'Forest']) -> list['Clearing']:
         if isinstance(origin, Clearing):
             adjacent_clearings = set(origin.path_connected_clearings)
             if self.treats_rivers_as_paths():
@@ -258,7 +272,7 @@ class Player(ABC):
             adjacent_clearings = origin.adjacent_clearings
         return list(adjacent_clearings)
 
-    def get_item(self, item_token: ItemToken) -> None:
+    def get_item(self, item_token: 'ItemToken') -> None:
         self.crafted_items.append(item_token)
 
     def draw_card(self) -> None:
@@ -272,10 +286,11 @@ class Player(ABC):
                 drawn_cards.append(card)
         self.hand.extend(drawn_cards)
 
-    def add_card_to_hand(self, card: Card) -> None:
-        self.hand.append(card)
+    def add_card_to_hand(self, card: Optional['Card']) -> None:
+        if card:
+            self.hand.append(card)
 
-    def take_random_card_from_hand(self) -> Optional[Card]:
+    def take_random_card_from_hand(self) -> Optional['Card']:
         if self.hand:
             random.shuffle(self.hand)
             return self.hand.pop()

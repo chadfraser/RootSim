@@ -3,10 +3,12 @@ import random
 from typing import TYPE_CHECKING
 
 from bot_resources.bot import Bot
+from bot_resources.bot_constants import BotDifficulty
 from bot_resources.bot_factions.electric_eyrie.decree import Decree
 from bot_resources.bot_factions.electric_eyrie.electric_eyrie_piece_stock import ElectricEyriePieceStock
 from bot_resources.bot_factions.electric_eyrie.electric_eyrie_trait import TRAIT_NOBILITY, TRAIT_RELENTLESS, \
     TRAIT_SWOOP, TRAIT_WAR_TAX
+from bot_resources.trait import Trait
 from constants import Faction, Suit
 from locations.clearing import Clearing
 from pieces.building import Building
@@ -27,19 +29,19 @@ if TYPE_CHECKING:
 
 class ElectricEyriePlayer(Bot):
     victory_points: int
-    game: Game
-    faction: Faction
-    piece_stock: ElectricEyriePieceStock
-    supply: Supply
-    revealed_cards: list[Card]
-    crafted_items: list[ItemToken]
-    decree: Decree
+    game: 'Game'
+    faction: 'Faction'
+    piece_stock: 'ElectricEyriePieceStock'
+    supply: 'Supply'
+    revealed_cards: list['Card']
+    crafted_items: list['ItemToken']
+    decree: 'Decree'
     turmoil: bool
     deal_extra_hit: bool
 
-    def __init__(self, game: Game) -> None:
+    def __init__(self, game: Game, difficulty: 'BotDifficulty' = None, traits: list['Trait'] = None) -> None:
         piece_stock = ElectricEyriePieceStock(self)
-        super().__init__(game, Faction.ELECTRIC_EYRIE, piece_stock)
+        super().__init__(game, Faction.ELECTRIC_EYRIE, piece_stock, difficulty=difficulty, traits=traits)
 
         self.decree = Decree(self)
         self.turmoil = False
@@ -48,6 +50,7 @@ class ElectricEyriePlayer(Bot):
     def setup(self) -> None:
         super().setup()
         starting_clearing = self.get_corner_homeland()
+        self.game.log(f'{self} starts in {starting_clearing}.', logging_faction=self.faction)
         starting_clearing.add_piece(self, self.piece_stock.get_roosts()[0])
         self.place_initial_warriors()
 
@@ -92,7 +95,7 @@ class ElectricEyriePlayer(Bot):
     #                 #
     ###################
 
-    def recruit_step(self, suit: Suit) -> None:
+    def recruit_step(self, suit: 'Suit') -> None:
         warrior_count_in_supply = len(self.get_unplaced_warriors())
 
         # Skip recruiting for columns with 0 cards in the suit, or if you are in turmoil
@@ -100,9 +103,6 @@ class ElectricEyriePlayer(Bot):
             return
         warriors_to_recruit = self.get_warriors_to_recruit(suit)
         if not warriors_to_recruit:
-            # TODO: Remove - Nobility update
-            if self.has_trait(TRAIT_NOBILITY):
-                self.turmoil = True
             return
 
         roost_ordered_clearings = [clearing for clearing in self.game.get_clearings_of_suit(suit) if
@@ -113,22 +113,13 @@ class ElectricEyriePlayer(Bot):
         sorted_roost_ordered_clearings = sort_clearings_by_enemy_pieces(sorted_roost_ordered_clearings, self)
         self.place_pieces_in_one_of_clearings(warriors_to_recruit, sorted_roost_ordered_clearings)
 
-        # TODO: Remove - Nobility update
-        # If we couldn't recruit anywhere, or couldn't recruit as many warriors as we were supposed to, check if we
-        # have the Nobility trait. If so, enter turmoil
-        warrior_count_recruited = warrior_count_in_supply - len(self.get_unplaced_warriors())
-        if warrior_count_recruited < self.get_recruiting_amount(suit):
-            if self.has_trait(TRAIT_NOBILITY):
-                self.turmoil = True
-            return
-
     def get_warriors_to_recruit(self, suit: Suit) -> list[Warrior]:
         warriors_available_to_recruit = self.get_unplaced_warriors()
         if len(warriors_available_to_recruit) > self.get_recruiting_amount(suit):
             return warriors_available_to_recruit[:self.get_recruiting_amount(suit)]
         return warriors_available_to_recruit
 
-    def get_recruiting_amount(self, suit: Suit) -> int:
+    def get_recruiting_amount(self, suit: 'Suit') -> int:
         recruiting_amount = self.decree.get_count_of_suited_cards_in_decree(suit)
         if suit == Suit.BIRD:
             recruiting_amount += self.difficulty.value - 1
@@ -140,7 +131,7 @@ class ElectricEyriePlayer(Bot):
     #              #
     ################
 
-    def move_step(self, suit: Suit) -> None:
+    def move_step(self, suit: 'Suit') -> None:
         # Skip moving for columns with 0 cards in the suit, or if you are in turmoil
         if self.turmoil or self.decree.get_count_of_suited_cards_in_decree(suit) == 0:
             return
@@ -167,7 +158,7 @@ class ElectricEyriePlayer(Bot):
                 self.move(warriors_to_move, origin_clearing, destination_clearing)
                 return
 
-    def get_warriors_to_move(self, origin_clearing: Clearing, suit: Suit) -> list[Warrior]:
+    def get_warriors_to_move(self, origin_clearing: 'Clearing', suit: 'Suit') -> list['Warrior']:
         own_rule_value = self.get_rule_value(origin_clearing)
         max_enemy_rule_value = self.get_max_enemy_rule_value_in_clearing(origin_clearing)
         warrior_count_to_move_and_keep_rule = own_rule_value - max_enemy_rule_value
@@ -177,7 +168,7 @@ class ElectricEyriePlayer(Bot):
                                      self.decree.get_count_of_suited_cards_in_decree(suit)))
         return origin_clearing.get_warriors_for_player(self)[:warrior_count_to_move]
 
-    def get_movement_destinations(self, origin_clearing: Clearing) -> list[Clearing]:
+    def get_movement_destinations(self, origin_clearing: 'Clearing') -> list['Clearing']:
         potential_destination_clearings = [clearing for clearing in self.get_adjacent_clearings(origin_clearing)]
         # Find destinations this move could end in, sorted by [no roost] -> [min enemy pieces] -> [lowest priority]
         sorted_destination_clearings = sort_clearings_by_priority(potential_destination_clearings, descending=True)
@@ -187,7 +178,7 @@ class ElectricEyriePlayer(Bot):
                                                                            descending=False)
         return sorted_destination_clearings
 
-    def get_max_enemy_rule_value_in_clearing(self, clearing: Clearing) -> int:
+    def get_max_enemy_rule_value_in_clearing(self, clearing: 'Clearing') -> int:
         max_enemy_rule_value = 0
         for other_player in clearing.get_all_other_players_in_location(self):
             rule_value = other_player.get_rule_value(clearing)
@@ -201,7 +192,7 @@ class ElectricEyriePlayer(Bot):
     #                #
     ##################
 
-    def battle_step(self, suit: Suit) -> None:
+    def battle_step(self, suit: 'Suit') -> None:
         # Skip battling for columns with 0 cards in the suit, or if you are in turmoil
         if self.turmoil or self.decree.get_count_of_suited_cards_in_decree(suit) == 0:
             return
@@ -219,7 +210,7 @@ class ElectricEyriePlayer(Bot):
         self.initiate_battle(sorted_suited_clearings[0])
         self.deal_extra_hit = False
 
-    def initiate_battle(self, clearing: Clearing) -> None:
+    def initiate_battle(self, clearing: 'Clearing') -> None:
         potential_targets = clearing.get_all_other_players_in_location(self)
         # Sort in reverse order from our tie-breaking priority: Setup order -> most pieces -> most buildings
         potential_targets = sort_players_by_setup_order(potential_targets)
@@ -228,8 +219,10 @@ class ElectricEyriePlayer(Bot):
         if potential_targets:
             self.battle(clearing, potential_targets[0])
 
-    def battle(self, clearing: Clearing, defender: Player) -> None:
+    def battle(self, clearing: 'Clearing', defender: 'Player') -> None:
+        self.game.log(f'{self} battles {defender} in {clearing}.', logging_faction=self.faction)
         random_rolls = (random.randint(0, 3), random.randint(0, 3))
+        self.game.log(f'{self} rolls {random_rolls[0]}, {random_rolls[1]}.', logging_faction=self.faction)
         # Defender allocates the rolls - high roll to attacker, low roll to defender, except in the case of Veterans
         roll_result = defender.allocate_rolls_as_defender(random_rolls)
         # Each battler caps their hits and adds their relevant bonus hits
@@ -237,6 +230,8 @@ class ElectricEyriePlayer(Bot):
                          self.get_bonus_hits(clearing, defender, is_attacker=True))
         defender_hits = (defender.cap_rolled_hits(clearing, roll_result.defender_roll) +
                          defender.get_bonus_hits(clearing, defender, is_attacker=False))
+        self.game.log(f'{self} does {attacker_hits} hits. {defender} does {defender_hits} hits.',
+                      logging_faction=self.faction)
         # Each battler removes their pieces and calculates how much VP the opponent should earn from the battle
         defender_damage_result = defender.suffer_damage(clearing, attacker_hits, self, is_attacker=False)
         attacker_damage_result = self.suffer_damage(clearing, defender_hits, defender, is_attacker=True)
@@ -251,6 +246,12 @@ class ElectricEyriePlayer(Bot):
         defender.add_victory_points(attacker_damage_result.points_awarded +
                                     defender.supplementary_score_for_removed_pieces_in_battle(
                                         self, attacker_damage_result.removed_pieces, is_attacker=False))
+
+    def get_bonus_hits(self, clearing: 'Clearing', opponent: 'Player', is_attacker: bool = True) -> int:
+        bonus_hits = super().get_bonus_hits(clearing, opponent, is_attacker)
+        if self.deal_extra_hit:
+            bonus_hits += 1
+        return bonus_hits
 
     #################
     #               #
@@ -274,7 +275,7 @@ class ElectricEyriePlayer(Bot):
             self.turmoil = True
 
     def get_score_for_roosts(self) -> int:
-        return max(0, len(self.get_unplaced_buildings()) - 1)
+        return max(0, 6 - len(self.get_unplaced_buildings()))
 
     #########################
     #                       #
@@ -282,7 +283,8 @@ class ElectricEyriePlayer(Bot):
     #                       #
     #########################
 
-    def replace_first_roost(self):
+    def replace_first_roost(self) -> None:
+        self.game.log(f'{self} builds a new roost.', logging_faction=self.faction)
         roost_to_place = self.get_unplaced_buildings()[0]
         warrior_count_to_place = max(4, len(self.get_unplaced_warriors()))
         warriors_to_place = self.get_unplaced_warriors()[:warrior_count_to_place]
@@ -294,6 +296,13 @@ class ElectricEyriePlayer(Bot):
         sorted_open_building_slot_clearings = sort_clearings_by_priority(suited_clearings_with_open_building_slots)
 
         self.place_pieces_in_one_of_clearings(pieces_to_place, sorted_open_building_slot_clearings)
+
+    def resolve_decree(self) -> None:
+        for step in [self.recruit_step, self.move_step, self.battle_step]:
+            for suit in [Suit.FOX, Suit.MOUSE, Suit.RABBIT, Suit.BIRD]:
+                if self.turmoil:
+                    return
+                step(suit)
 
     def relentless(self) -> None:
         clearings_with_warriors = [clearing for clearing in self.game.clearings() if
@@ -310,7 +319,6 @@ class ElectricEyriePlayer(Bot):
                 clearing.remove_pieces(player, defenseless_pieces)
 
     def swoop(self) -> None:
-        # TODO: Triggers Nobility turmoil? - No, Nobility update
         warrior_count_to_place = max(2, len(self.get_unplaced_warriors()))
         warriors_to_place = self.get_unplaced_warriors()[:warrior_count_to_place]
         clearings_without_own_pieces = [clearing for clearing in self.game.clearings() if
@@ -318,10 +326,10 @@ class ElectricEyriePlayer(Bot):
         sorted_clearings_without_own_pieces = sort_clearings_by_priority(clearings_without_own_pieces)
 
         self.place_pieces_in_one_of_clearings(warriors_to_place, sorted_clearings_without_own_pieces)
-        # TODO: Check if this triggers turmoil? No, nobility update
 
     def turmoil_action(self) -> None:
         # HUMILIATE
+        self.game.log(f'{self} enters turmoil.', logging_faction=self.faction)
         bird_cards_in_decree = self.decree.get_count_of_bird_cards_in_decree()
         if self.has_trait(TRAIT_NOBILITY):
             self.add_victory_points(bird_cards_in_decree)
@@ -329,16 +337,6 @@ class ElectricEyriePlayer(Bot):
             self.add_victory_points(bird_cards_in_decree * -1)
         # PURGE
         self.decree.purge()
-
-########################################################################################################################
-
-    def resolve_decree(self):
-        for suit in [Suit.FOX, Suit.MOUSE, Suit.RABBIT, Suit.BIRD]:
-            if self.turmoil:
-                return
-            self.recruit_step(suit)
-            self.move_step(suit)
-            self.battle_step(suit)
 
     def does_rule_clearing(self, clearing: Clearing) -> bool:
         all_players_in_clearing = clearing.get_all_other_players_in_location(self)
@@ -350,9 +348,3 @@ class ElectricEyriePlayer(Bot):
             if player.get_rule_value(clearing) > own_rule_value_in_clearing:
                 return False
         return True
-
-    def get_bonus_hits(self, clearing: Clearing, opponent: Player, is_attacker: bool = True) -> int:
-        bonus_hits = super().get_bonus_hits(clearing, opponent, is_attacker)
-        if self.deal_extra_hit:
-            bonus_hits += 1
-        return bonus_hits

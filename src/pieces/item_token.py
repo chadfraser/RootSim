@@ -8,12 +8,12 @@ if TYPE_CHECKING:
 
 
 class ItemToken(Piece):
-    item: Item
+    item: 'Item'
     is_starting_item: bool
     is_ruin_item: bool
     is_exhausted: bool
 
-    def __init__(self, item: Item, is_starting_item: bool = False, is_ruin_item: bool = False) -> None:
+    def __init__(self, item: 'Item', is_starting_item: bool = False, is_ruin_item: bool = False) -> None:
         super().__init__(player=None, name='')
         self.item = item
         self.is_starting_item = is_starting_item

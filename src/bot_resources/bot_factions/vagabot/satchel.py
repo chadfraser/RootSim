@@ -10,9 +10,9 @@ if TYPE_CHECKING:
 
 
 class Satchel(Supply):
-    undamaged_items: list[ItemToken]
-    damaged_items: list[ItemToken]
-    battle_track: list[ItemToken]
+    undamaged_items: list['ItemToken']
+    damaged_items: list['ItemToken']
+    battle_track: list['ItemToken']
 
     def __init__(self, game: Game, player: Player) -> None:
         super().__init__(game, player)
@@ -20,7 +20,7 @@ class Satchel(Supply):
         self.damaged_items = []
         self.battle_track = []
 
-    def get_exhausted_undamaged_items(self, item_count: int = 1) -> list[ItemToken]:
+    def get_exhausted_undamaged_items(self, item_count: int = 1) -> list['ItemToken']:
         items = []
         for item in self.undamaged_items:
             if item.is_exhausted:
@@ -29,7 +29,7 @@ class Satchel(Supply):
                     break
         return items
 
-    def get_unexhausted_undamaged_items(self, item_count: int = 1) -> list[ItemToken]:
+    def get_unexhausted_undamaged_items(self, item_count: int = 1) -> list['ItemToken']:
         items = []
         for item in self.undamaged_items:
             if not item.is_exhausted:
@@ -38,7 +38,7 @@ class Satchel(Supply):
                     break
         return items
 
-    def get_exhausted_damaged_items(self, item_count: int = 1) -> list[ItemToken]:
+    def get_exhausted_damaged_items(self, item_count: int = 1) -> list['ItemToken']:
         items = []
         for item in self.damaged_items:
             if item.is_exhausted:
@@ -47,7 +47,7 @@ class Satchel(Supply):
                     break
         return items
 
-    def get_unexhausted_damaged_items(self, item_count: int = 1) -> list[ItemToken]:
+    def get_unexhausted_damaged_items(self, item_count: int = 1) -> list['ItemToken']:
         items = []
         for item in self.damaged_items:
             if not item.is_exhausted:
@@ -62,9 +62,15 @@ class Satchel(Supply):
             return False
         for item in items_to_exhaust:
             item.is_exhausted = True
+            self.game.log(f'{self} exhausts a {item.item}.', logging_faction=self.player.faction)
+            self.game.log(f'{self} now has '
+                          f'{len(self.get_unexhausted_undamaged_items(-1))}/{len(self.get_exhausted_undamaged_items(-1))}'
+                          f' undamaged items and '
+                          f'{len(self.get_unexhausted_damaged_items(-1))}/{len(self.get_exhausted_damaged_items(-1))}'
+                          f' damaged items.', logging_faction=self.player.faction)
         return True
 
-    def add_item(self, item: ItemToken) -> None:
+    def add_item(self, item: 'ItemToken') -> None:
         item.is_exhausted = False
         if self.get_total_item_count() in [5, 8, 11]:
             self.battle_track.append(item)
@@ -78,6 +84,9 @@ class Satchel(Supply):
         if not item_to_refresh:
             return
         item_to_refresh[0].is_exhausted = False
+        self.game.log(f'{self} refreshes a'
+                      f'{"damaged" if item_to_refresh[0] in self.get_exhausted_damaged_items() else ""}'
+                      f' {item_to_refresh[0].item}.', logging_faction=self.player.faction)
 
     def repair_item(self) -> None:
         item_to_repair = self.get_unexhausted_damaged_items()
@@ -87,17 +96,22 @@ class Satchel(Supply):
             return
         self.damaged_items.remove(item_to_repair[0])
         self.undamaged_items.append(item_to_repair[0])
+        self.game.log(f'{self} repairs an'
+                      f'{"exhausted" if item_to_repair[0] in self.get_exhausted_damaged_items() else ""}'
+                      f' {item_to_repair[0].item}.', logging_faction=self.player.faction)
 
-    def damage_specific_item(self, item: ItemToken) -> None:
+    def damage_specific_item(self, item: 'ItemToken') -> None:
         if item not in self.undamaged_items:
             return
         self.undamaged_items.remove(item)
         self.damaged_items.append(item)
+        self.game.log(f'{self} damages {item.item}.', logging_faction=self.player.faction)
 
     def repair_all_items(self) -> None:
         while self.damaged_items:
             item = self.damaged_items.pop()
             self.undamaged_items.append(item)
+        self.game.log(f'{self} repairs all items.', logging_faction=self.player.faction)
 
     def get_total_item_count(self) -> int:
         return len(self.undamaged_items) + len(self.damaged_items) + len(self.battle_track)

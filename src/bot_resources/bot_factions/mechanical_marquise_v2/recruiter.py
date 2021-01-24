@@ -11,5 +11,5 @@ if TYPE_CHECKING:
 
 
 class Recruiter(MechanicalMarquiseV2Building):
-    def __init__(self, player: MechanicalMarquiseV2Player) -> None:
+    def __init__(self, player: 'MechanicalMarquiseV2Player') -> None:
         super().__init__(player, 'Recruiter', Suit.MOUSE)

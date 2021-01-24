@@ -9,12 +9,12 @@ if TYPE_CHECKING:
 
 
 class Deck(ABC):
-    game: Game
-    cards: list[Card]
-    discard_pile: list[Card]
-    dominance_region: list[Card]
+    game: 'Game'
+    cards: list['Card']
+    discard_pile: list['Card']
+    dominance_region: list['Card']
 
-    def __init__(self, game: Game) -> None:
+    def __init__(self, game: 'Game') -> None:
         self.game = game
         self.cards = []
         self.discard_pile = []
@@ -24,7 +24,7 @@ class Deck(ABC):
     def shuffle_deck(self) -> None:
         random.shuffle(self.cards)
 
-    def draw_card(self) -> Optional[Card]:
+    def draw_card(self) -> Optional['Card']:
         if self.cards:
             drawn_card = self.cards.pop()
             if not self.cards:
@@ -41,7 +41,7 @@ class Deck(ABC):
         self.discard_pile = []
         self.shuffle_deck()
 
-    def draw_cards(self, number_of_cards: int = 1) -> list[Card]:
+    def draw_cards(self, number_of_cards: int = 1) -> list['Card']:
         cards = []
         for _ in range(number_of_cards):
             card = self.draw_card()

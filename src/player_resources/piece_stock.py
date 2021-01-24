@@ -11,13 +11,13 @@ if TYPE_CHECKING:
 
 class PieceStock:
     player: Player
-    warriors: list[Warrior]
-    buildings: list[Building]
-    tokens: list[Token]
-    other_pieces: list[Piece]
+    warriors: list['Warrior']
+    buildings: list['Building']
+    tokens: list['Token']
+    other_pieces: list['Piece']
 
-    def __init__(self, player: Player, warriors: list[Warrior] = None, buildings: list[Building] = None,
-                 tokens: list[Token] = None, other_pieces: list[Piece] = None) -> None:
+    def __init__(self, player: Player, warriors: list['Warrior'] = None, buildings: list['Building'] = None,
+                 tokens: list['Token'] = None, other_pieces: list['Piece'] = None) -> None:
         if warriors is None:
             warriors = []
         if buildings is None:
@@ -34,6 +34,6 @@ class PieceStock:
         self.other_pieces = other_pieces
 
     @property
-    def pieces(self) -> list[Piece]:
+    def pieces(self) -> list['Piece']:
         return [piece for piece_list in (self.warriors, self.buildings, self.tokens, self.other_pieces)
                 for piece in piece_list]

@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 
 class Building(Piece):
-    def __init__(self, player: Player, name: str) -> None:
+    def __init__(self, player: 'Player', name: str) -> None:
         super().__init__(player, name)
 
     def get_score_for_removal(self) -> int:

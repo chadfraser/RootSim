@@ -11,11 +11,11 @@ if TYPE_CHECKING:
 
 
 class ElectricEyriePieceStock(PieceStock):
-    def __init__(self, player: ElectricEyriePlayer) -> None:
+    def __init__(self, player: 'ElectricEyriePlayer') -> None:
         warriors = [Warrior(player) for _ in range(20)]
         buildings = [Roost(player) for _ in range(7)]
 
         super().__init__(player, warriors, buildings)
 
-    def get_roosts(self) -> list[Roost]:
+    def get_roosts(self) -> list['Roost']:
         return [building for building in self.buildings if isinstance(building, Roost)]

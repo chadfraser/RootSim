@@ -10,6 +10,6 @@ class RollResult:
 
 
 class DamageResult:
-    def __init__(self, removed_pieces: list[Piece], points_awarded: int) -> None:
+    def __init__(self, removed_pieces: list['Piece'], points_awarded: int) -> None:
         self.removed_pieces = removed_pieces
         self.points_awarded = points_awarded
