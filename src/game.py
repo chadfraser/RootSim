@@ -1,15 +1,24 @@
 from __future__ import annotations
 
 import logging
+import random
 from typing import Optional, TYPE_CHECKING
 
 from board_map.autumn_board_map import AutumnBoardMap
 from bot_resources.bot_constants import BotDifficulty
 from bot_resources.bot_factions.automated_alliance.automated_alliance_player import AutomatedAlliancePlayer
+from bot_resources.bot_factions.automated_alliance.automated_alliance_trait import TRAIT_INFORMANTS, TRAIT_POPULARITY, \
+    TRAIT_VETERANS, TRAIT_WILDFIRE
 from bot_resources.bot_factions.electric_eyrie.electric_eyrie_player import ElectricEyriePlayer
+from bot_resources.bot_factions.electric_eyrie.electric_eyrie_trait import TRAIT_NOBILITY, TRAIT_RELENTLESS, \
+    TRAIT_SWOOP, TRAIT_WAR_TAX
 from bot_resources.bot_factions.mechanical_marquise_v2.mechanical_marquise_v2_player import MechanicalMarquiseV2Player
-from bot_resources.bot_factions.vagabot.vagabot_characters import VagabotThief
+from bot_resources.bot_factions.mechanical_marquise_v2.mechanical_marquise_v2_trait import TRAIT_BLITZ, TRAIT_HOSPITALS, \
+    TRAIT_FORTIFIED, TRAIT_IRON_WILL
+from bot_resources.bot_factions.vagabot.vagabot_characters import VagabotThief, VagabotRanger
 from bot_resources.bot_factions.vagabot.vagabot_player import VagabotPlayer
+from bot_resources.bot_factions.vagabot.vagabot_trait import TRAIT_MARKSMAN, TRAIT_HELPER, TRAIT_BERSERKER, \
+    TRAIT_ADVENTURER
 from constants import Item, Faction
 from deck.base_deck import BaseDeck
 from deck.cards.dominance_card import DominanceCard
@@ -39,7 +48,7 @@ class Game:
 
     def __init__(self, players: list['Player'] = None, factions: list['Faction'] = None) -> None:
         self.logger = logging.getLogger(__name__)
-        logging.basicConfig(level=logging.INFO)
+        # logging.basicConfig(level=logging.INFO)
 
         self.deck = BaseDeck(self)
         self.quest_deck = QuestDeck()
@@ -67,13 +76,15 @@ class Game:
 
     def build_player_by_faction(self, faction: Faction) -> 'Player':
         if faction == Faction.MECHANICAL_MARQUISE_2_0:
-            return MechanicalMarquiseV2Player(self, BotDifficulty.MASTER)
+            return MechanicalMarquiseV2Player(self, BotDifficulty.MASTER, traits=[TRAIT_BLITZ, TRAIT_HOSPITALS,
+                                                                                  TRAIT_FORTIFIED, TRAIT_IRON_WILL])
         if faction == Faction.ELECTRIC_EYRIE:
-            return ElectricEyriePlayer(self, BotDifficulty.MASTER)
+            return ElectricEyriePlayer(self, BotDifficulty.BEGINNER, traits=[TRAIT_NOBILITY, TRAIT_RELENTLESS, TRAIT_SWOOP, TRAIT_WAR_TAX])
         if faction == Faction.AUTOMATED_ALLIANCE:
-            return AutomatedAlliancePlayer(self, BotDifficulty.MASTER)
+            return AutomatedAlliancePlayer(self, BotDifficulty.MASTER, traits=[TRAIT_INFORMANTS, TRAIT_POPULARITY,
+                                                                               TRAIT_VETERANS, TRAIT_WILDFIRE])
         if faction == Faction.VAGABOT:
-            return VagabotPlayer(self, VagabotThief(), BotDifficulty.MASTER)
+            return VagabotPlayer(self, VagabotRanger(), BotDifficulty.MASTER, traits=[TRAIT_ADVENTURER, TRAIT_BERSERKER, TRAIT_HELPER, TRAIT_MARKSMAN])
 
     def clearings(self) -> list['Clearing']:
         return self.board_map.clearings
@@ -152,3 +163,19 @@ class Game:
         elif logging_faction == Faction.VAGABOT:
             message = f'\u001b[30m{message}\u001b[0m'
         self.logger.log(log_level, message)
+
+
+# for fcc in itertools.combinations([Faction.MECHANICAL_MARQUISE_2_0, Faction.ELECTRIC_EYRIE, Faction.AUTOMATED_ALLIANCE,
+#                             Faction.VAGABOT], 2):
+ff = {Faction.MECHANICAL_MARQUISE_2_0: 0, Faction.ELECTRIC_EYRIE: 0, Faction.AUTOMATED_ALLIANCE: 0,
+                    Faction.VAGABOT: 0}
+for _ in range(2000):
+    c = [Faction.MECHANICAL_MARQUISE_2_0, Faction.ELECTRIC_EYRIE, Faction.AUTOMATED_ALLIANCE, Faction.VAGABOT]
+    # c = list(fcc)
+    random.shuffle(c)
+    gg = Game(factions=c)
+    gg.play()
+    ff[gg.winner.faction] += 1
+# print(fcc)
+for k, v in ff.items():
+    print(f'{k.value}: {v}')
