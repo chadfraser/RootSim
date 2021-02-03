@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import logging
 from typing import Optional, TYPE_CHECKING
 
@@ -7,7 +8,7 @@ from bot_resources.bot_constants import BotDifficulty
 from bot_resources.bot_factions.automated_alliance.automated_alliance_player import AutomatedAlliancePlayer
 from bot_resources.bot_factions.electric_eyrie.electric_eyrie_player import ElectricEyriePlayer
 from bot_resources.bot_factions.mechanical_marquise_v2.mechanical_marquise_v2_player import MechanicalMarquiseV2Player
-from bot_resources.bot_factions.vagabot.vagabot_characters import VagabotThief, VagabotRanger
+from bot_resources.bot_factions.vagabot.vagabot_characters import VagabotThief
 from bot_resources.bot_factions.vagabot.vagabot_player import VagabotPlayer
 from constants import Item, Faction
 from deck.base_deck import BaseDeck
@@ -72,7 +73,7 @@ class Game:
         if faction == Faction.AUTOMATED_ALLIANCE:
             return AutomatedAlliancePlayer(self, BotDifficulty.MASTER)
         if faction == Faction.VAGABOT:
-            return VagabotPlayer(self, VagabotRanger(), BotDifficulty.MASTER)
+            return VagabotPlayer(self, VagabotThief(), BotDifficulty.MASTER)
 
     def clearings(self) -> list['Clearing']:
         return self.board_map.clearings

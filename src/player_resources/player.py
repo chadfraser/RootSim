@@ -81,7 +81,7 @@ class Player(ABC):
         self.victory_points = max(0, self.victory_points + victory_points)
         if self.victory_points >= 30:
             self.game.win(self)
-        if victory_points > 0:
+        if victory_points != 0:
             self.game.log(f'{self} now has total {self.victory_points} VP.', logging_faction=self.faction)
 
     def get_unplaced_pieces(self) -> list['Piece']:
