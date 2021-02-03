@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Type, TYPE_CHECKING
+from typing import Type, TYPE_CHECKING, Optional
 
 from locations.location import Location
 
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class Supply(Location):
-    def __init__(self, game: 'Game', player: 'Player') -> None:
+    def __init__(self, game: Optional['Game'], player: 'Player') -> None:
         super().__init__(game)
         self.player = player
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 import random
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from bot_resources.bot import Bot
 from bot_resources.bot_constants import BotDifficulty
@@ -39,7 +39,8 @@ class ElectricEyriePlayer(Bot):
     turmoil: bool
     deal_extra_hit: bool
 
-    def __init__(self, game: Game, difficulty: 'BotDifficulty' = None, traits: list['Trait'] = None) -> None:
+    def __init__(self, game: Optional['Game'], difficulty: 'BotDifficulty' = None,
+                 traits: list['Trait'] = None) -> None:
         piece_stock = ElectricEyriePieceStock(self)
         super().__init__(game, Faction.ELECTRIC_EYRIE, piece_stock, difficulty=difficulty, traits=traits)
 
@@ -319,7 +320,7 @@ class ElectricEyriePlayer(Bot):
                 clearing.remove_pieces(player, defenseless_pieces)
 
     def swoop(self) -> None:
-        warrior_count_to_place = max(2, len(self.get_unplaced_warriors()))
+        warrior_count_to_place = min(2, len(self.get_unplaced_warriors()))
         warriors_to_place = self.get_unplaced_warriors()[:warrior_count_to_place]
         clearings_without_own_pieces = [clearing for clearing in self.game.clearings() if
                                         clearing.get_piece_count_for_player(self) == 0]

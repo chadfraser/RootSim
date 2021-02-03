@@ -31,7 +31,7 @@ class Player(ABC):
     revealed_cards: list['Card']
     crafted_items: list['ItemToken']
 
-    def __init__(self, game: 'Game', faction: 'Faction', piece_stock: 'PieceStock' = None) -> None:
+    def __init__(self, game: Optional['Game'], faction: 'Faction', piece_stock: 'PieceStock' = None) -> None:
         if piece_stock is None:
             piece_stock = PieceStock(self)
 
@@ -45,6 +45,10 @@ class Player(ABC):
         self.hand = []
         self.revealed_cards = []
         self.crafted_items = []
+
+    def initialize_game(self, game: 'Game') -> None:
+        self.game = game
+        self.supply.game = game
 
     def setup(self) -> None:
         self.supply.add_pieces(self, self.piece_stock.pieces)
@@ -77,7 +81,7 @@ class Player(ABC):
         self.victory_points = max(0, self.victory_points + victory_points)
         if self.victory_points >= 30:
             self.game.win(self)
-        if victory_points > 0:
+        if victory_points != 0:
             self.game.log(f'{self} now has total {self.victory_points} VP.', logging_faction=self.faction)
 
     def get_unplaced_pieces(self) -> list['Piece']:

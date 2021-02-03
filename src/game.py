@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import logging
 from typing import Optional, TYPE_CHECKING
 
@@ -38,7 +39,7 @@ class Game:
 
     def __init__(self, players: list['Player'] = None, factions: list['Faction'] = None) -> None:
         self.logger = logging.getLogger(__name__)
-        # logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.INFO)
 
         self.deck = BaseDeck(self)
         self.quest_deck = QuestDeck()
@@ -63,15 +64,6 @@ class Game:
 
         for player in sort_players_by_setup_order(self.players):
             player.setup()
-
-        while not self.winner:
-            self.log(f'--{self.turn_player}--')
-            self.turn_player.take_turn()
-            next_turn_player_index = self.turn_order.index(self.turn_player) + 1
-            next_turn_player_index %= len(self.turn_order)
-            self.turn_player = self.turn_order[next_turn_player_index]
-            for player in self.players:
-                player.between_turns()
 
     def build_player_by_faction(self, faction: Faction) -> 'Player':
         if faction == Faction.MECHANICAL_MARQUISE_2_0:
@@ -107,6 +99,16 @@ class Game:
         for item_token in self.item_supply:
             if item_token.item == item:
                 return item_token
+
+    def play(self) -> None:
+        while not self.winner:
+            self.log(f'--{self.turn_player}--')
+            self.turn_player.take_turn()
+            next_turn_player_index = self.turn_order.index(self.turn_player) + 1
+            next_turn_player_index %= len(self.turn_order)
+            self.turn_player = self.turn_order[next_turn_player_index]
+            for player in self.players:
+                player.between_turns()
 
     def win(self, player: 'Player') -> None:
         if self.winner:

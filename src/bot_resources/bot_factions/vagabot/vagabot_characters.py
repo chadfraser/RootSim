@@ -24,9 +24,6 @@ class VagabotCharacter(ABC):
     def perform_special_action(self):
         pass
 
-    def set_player(self, player: 'VagabotPlayer') -> None:
-        self.player = player
-
     def can_perform_special_action(self) -> bool:
         return False
 

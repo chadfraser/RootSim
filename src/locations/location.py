@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from player_resources.player_piece_map import PlayerPieceMap
 
@@ -13,10 +13,10 @@ if TYPE_CHECKING:
 
 
 class Location:
-    game: Game
+    game: 'Game'
     pieces: dict['Player', 'PlayerPieceMap']
 
-    def __init__(self, game: 'Game') -> None:
+    def __init__(self, game: Optional['Game']) -> None:
         self.game = game
         self.pieces = {}
 

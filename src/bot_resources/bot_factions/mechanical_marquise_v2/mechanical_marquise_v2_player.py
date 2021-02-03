@@ -40,7 +40,8 @@ class MechanicalMarquiseV2Player(Bot):
     crafted_items: list[ItemToken]
     built_building_this_turn: bool
 
-    def __init__(self, game: Game, difficulty: 'BotDifficulty' = None, traits: list['Trait'] = None) -> None:
+    def __init__(self, game: Optional['Game'], difficulty: 'BotDifficulty' = None,
+                 traits: list['Trait'] = None) -> None:
         piece_stock = MechanicalMarquiseV2PieceStock(self)
         super().__init__(game, Faction.MECHANICAL_MARQUISE_2_0, piece_stock, difficulty=difficulty, traits=traits)
 
@@ -172,14 +173,14 @@ class MechanicalMarquiseV2Player(Bot):
         clearing.remove_pieces(self, removed_pieces)
         if not is_attacker:
             # Hospitals only works as the defender
-            self.apply_field_hospitals(removed_pieces)
+            self.apply_field_hospitals([piece for piece in removed_pieces if isinstance(piece, Warrior)])
         return DamageResult(removed_pieces=removed_pieces, points_awarded=points_awarded)
 
     def apply_field_hospitals(self, removed_warriors: list['Warrior']) -> None:
         if self.has_trait(TRAIT_HOSPITALS):
             keep_clearing = self.piece_stock.get_keep().location
             if isinstance(keep_clearing, Clearing) and len(removed_warriors) >= 2:
-                keep_clearing.add_piece(self, removed_warriors[0])
+                keep_clearing.add_piece(self, removed_warriors[0], log=True)
 
     ###################
     #                 #

@@ -17,6 +17,7 @@ from locations.clearing import Clearing
 from locations.forest import Forest
 from pieces.item_token import ItemToken
 from pieces.warrior import Warrior
+from player_resources.player import Player
 from player_resources.supply import Supply
 from sort_utils import sort_clearings_by_enemy_pieces, \
     sort_clearings_by_priority, sort_paths_by_lexicographic_priority, \
@@ -28,7 +29,6 @@ if TYPE_CHECKING:
     from game import Game
     from locations.location import Location
     from pieces.piece import Piece
-    from player_resources.player import Player
 
 
 class VagabotPlayer(Bot):
@@ -45,7 +45,7 @@ class VagabotPlayer(Bot):
     has_slipped: bool
     has_battled: bool
 
-    def __init__(self, game: 'Game', character: 'VagabotCharacter', difficulty: 'BotDifficulty' = None,
+    def __init__(self, game: Optional['Game'], character: 'VagabotCharacter', difficulty: 'BotDifficulty' = None,
                  traits: list['Trait'] = None) -> None:
         piece_stock = VagabotPieceStock(self)
         super().__init__(game, Faction.VAGABOT, piece_stock, difficulty=difficulty, traits=traits)
@@ -53,13 +53,21 @@ class VagabotPlayer(Bot):
         self.has_slipped = False
         self.has_battled = False
         self.character = character
-        self.character.set_player(self)
-        self.quest = self.game.quest_deck.draw_quest_card()
+        self.character.player = self
+        if game:
+            self.quest = self.game.quest_deck.draw_quest_card()
+        else:
+            self.quest = None
         self.satchel = Satchel(self.game, self)
 
         for _ in range(self.character.starting_item_amount):
             random_item = random.choice(list(Item))
             self.satchel.add_item(ItemToken(random_item, is_starting_item=True))
+
+    def initialize_game(self, game: 'Game') -> None:
+        self.game = game
+        self.supply.game = game
+        self.quest = self.game.quest_deck.draw_quest_card()
 
     def setup(self) -> None:
         maximum_adjacent_clearings = 0
